@@ -1,346 +1,290 @@
 # Chapter 3 — Probability Topics
-
-## Three title options
-
-1. **What Happens When You Don't Know: Probability as precision under uncertainty**
-2. **The Machinery of Chance: How we measure outcomes when the future is unmade**
-3. **Thinking in Odds: From drug trials to coin flips to the decision you make right now**
+*The mathematics of what you don't yet know.*
 
 ---
 
-## TL;DR
+There's a puzzle that has been embarrassing doctors for decades.
 
-Probability is how we talk precisely about what we don't yet know. It translates *maybe* into numbers between 0 and 1. This chapter teaches you to build a sample space (all possible outcomes), identify events within it, and use addition and multiplication rules to calculate the probability of complex outcomes. The key tension: are two events independent (one doesn't affect the other) or dependent (one does)? Are they mutually exclusive (can't happen together) or not? These distinctions let you move from intuition to calculation.
+A woman in her fifties gets a routine mammogram. The radiologist calls back: the test is positive. She's terrified. She asks her doctor: "Given that I tested positive, what is the probability I actually have cancer?"
 
----
+Her doctor — who is not incompetent, who finished medical school and a residency and sees patients every day — gives her a number around 90%. Because the test is 98% accurate, and she tested positive, so surely it's very likely she has cancer.
 
-## Cold open: The mammogram puzzle
+The correct answer is closer to 9%.
 
-A woman in her fifties gets a routine mammogram. The radiologist calls back. The test came back positive for breast cancer. The patient is terrified. But before she schedules surgery, she asks a question her doctor should have raised first: "Given that I tested positive, how likely is it I actually have cancer?"
+The doctor confused two probabilities that feel the same but are entirely different things. The test's accuracy — the probability you test positive *given* that you have cancer — is not the same as the probability you have cancer *given* that you tested positive. These are reversed conditional probabilities, and they can differ by a factor of ten.
 
-This is not the same as the question the mammogram answers. The test is accurate — it catches about 98% of women who actually have cancer. But that's not what matters now. What matters is: I tested positive; what does that tell me?
+This chapter is about the machinery that produces the correct answer and the vocabulary needed to understand why the doctor's intuition was so badly wrong.
 
-The answer depends on something the test itself doesn't measure: how common is breast cancer in the population to begin with? If 1 in 100 women in her age group has cancer, and the test catches 98% of them but produces false positives in 10% of women who don't have cancer, the math says: a positive test means she has maybe a 9% chance of actually having cancer.
-
-She'd be far more likely to *not* have cancer and just to be one of the false positives.
-
-This chapter teaches you the mathematics that resolves that puzzle. It is the machinery of conditional probability — how information changes what we should believe.
-
-### Learning objectives
-
-By the end of this chapter you will be able to:
-
-- **Define** a sample space and represent it with lists, tree diagrams, and tables.
-- **Identify** events and compute their probability from equally likely outcomes.
-- **Distinguish** between independent and mutually exclusive events — they are different, and students confuse them.
-- **Apply** the multiplication rule (for AND) and addition rule (for OR), adjusting for dependence and overlap.
-- **Compute** conditional probabilities and use them to update beliefs in light of new information.
-- **Use** contingency tables and tree diagrams to organize data and reason about complex probability scenarios.
-
-### Prerequisites
-
-Arithmetic with fractions and decimals. The ability to count outcomes and organize them into groups. Comfort with the notation $P(A)$ to mean "the probability of event $A$."
-
-### Why this chapter matters
-
-Probability is the mathematics of decisions under uncertainty. Every medical test, every polling prediction, every weather forecast rests on probability thinking. When a doctor interprets a test result, when a jury assesses the chance a defendant is guilty, when a patient decides whether to take a medication with side effects — they are reasoning about probabilities. This chapter teaches you to reason with rigor instead of intuition. Intuition about probability is often wrong, sometimes catastrophically.
-
-Later chapters will build on this foundation. Chapter 4 moves from abstract probability to random variables — probability applied to measurable quantities. Chapter 7 introduces the binomial distribution, which counts successes across repeated trials. Hypothesis testing (Chapters 9 and 10) will hinge on your ability to think about what outcomes would be *likely* if some assumption is true and what outcomes would be *unlikely* — that is, probability in the service of evidence.
+<!-- → [INFOGRAPHIC: Two-panel split showing the two reversed conditionals: left panel labeled "What the test measures: P(positive | cancer) = 98%" with arrow from Cancer → Test; right panel labeled "What the patient needs: P(cancer | positive) = ?" with arrow from Test → Cancer. Visual goal: student immediately sees these are different questions pointing in opposite directions.] -->
 
 ---
 
-## Concept 1 — Sample space, events, and the basic machinery
+## What probability is
 
-**Cold open: A physician reading a dice in a bottle**
+Probability is how we talk precisely about things we don't yet know. It translates *maybe* into a number.
 
-You are a pediatrician. A parent brings in their child with a sore throat. You suspect strep. You take a throat culture. The test comes back: *positive*. What do you know?
+The number lives between 0 and 1. Zero means impossible. One means certain. Half means equally likely to occur or not. The probability of an event is the fraction of all possible equally likely outcomes in which that event occurs.
 
-You know the test detected something in the child's throat. But you already knew that — the parent wouldn't have come in otherwise. What you're trying to figure out is: given this positive test, is it more likely the child has strep than not?
+That definition hides a restriction: it only works directly when outcomes are equally likely. If you roll a fair die, all six faces are equally likely, so the probability of rolling a 3 is 1/6. But if the die is loaded, all six faces are not equally likely, and the formula $1/6$ is wrong. This matters more than most textbooks admit. Many real-world probability problems are badly set up because someone assumed equal likelihood without checking whether the assumption is defensible.
 
-That question is probability, but it is not simple probability. It is conditional probability — the probability of the underlying reality (strep, or not) given the evidence (the test result).
+Let me give you the formal structure and then show you how to use it.
 
-Before we can answer that, we need vocabulary.
+An **experiment** is any process with more than one possible outcome. Flipping a coin is an experiment. Rolling a die. Drawing a card. Running a medical test.
 
-### The sample space: All possible outcomes
+The **sample space** is the complete list of all possible outcomes, written $S$. For a coin, $S = \{H, T\}$. For a single die, $S = \{1, 2, 3, 4, 5, 6\}$. The sample space must be exhaustive — every possible outcome must be in it — and each outcome must appear exactly once.
 
-An **experiment** is something that can happen in more than one way and whose outcome is not predetermined. Flipping a coin is an experiment. Rolling a die is an experiment. Administering a strep test is an experiment.
+An **event** is any subset of the sample space. "Rolling an even number" is the event $\{2, 4, 6\}$. "Drawing a heart from a deck of cards" is the set of all 13 hearts. Events can be as large as the whole sample space (certain to happen) or as small as a single outcome.
 
-The **sample space** of an experiment is the set of all possible outcomes. For a single fair coin, the sample space is $S = \{H, T\}$ — heads or tails. For a single die, the sample space is $S = \{1, 2, 3, 4, 5, 6\}$. The sample space must be *exhaustive* — every possible outcome must be listed — and *mutually exclusive* — no outcome can happen at the same time as another.
-
-An **event** is any subset of the sample space. An event might be a single outcome — *rolling a 2* — or a collection of outcomes — *rolling an even number*. When we flip two coins, the event "at least one head" is $\{HH, HT, TH\}$ — three of the four possible outcomes.
-
-The **probability** of an event is a number between 0 and 1, inclusive. $P(A) = 0$ means the event can never occur. $P(A) = 1$ means it will always occur. $P(A) = 0.5$ means the event is equally likely to occur as not to occur. The probability is the long-term relative frequency — if you repeat the experiment many times, the fraction of times the event occurs approaches the probability.
-
-### Computing probability from equally likely outcomes
-
-When all outcomes in the sample space are equally likely, the probability of an event is simple:
+When all outcomes are equally likely:
 
 $$P(A) = \frac{\text{number of outcomes in } A}{\text{total number of outcomes in } S}$$
 
-A fair die has six equally likely outcomes. The event "rolling an even number" has three outcomes: $\{2, 4, 6\}$. So $P(\text{even}) = 3/6 = 0.5$. The event "rolling at least a 5" has two outcomes: $\{5, 6\}$. So $P(\text{at least 5}) = 2/6 = 1/3 \approx 0.333$.
+<!-- → [IMAGE: Single fair die with all six faces shown; two faces (5 and 6) shaded to illustrate the event "rolling at least a 5." Caption should note: shaded outcomes = event A; total faces = sample space S; fraction = probability.] -->
 
-This is elementary, but notice what it requires: you must be able to count the sample space accurately, and you must be confident that the outcomes are equally likely. With a fair die, both are true. With a real die — especially one from your board games at home — the second assumption might fail. Casino dice are manufactured to avoid the bias that comes from the divots carved out for the spots.
+Roll a fair die. The event "rolling at least a 5" contains two outcomes: $\{5, 6\}$. So $P(\text{at least 5}) = 2/6 = 1/3$.
 
-### Common misconceptions
-
-**Probability requires large numbers.** No. If you flip a coin once, the probability of heads is still 0.5, even though you can't run the experiment large numbers of times. Probability describes the uncertainty, not the frequency of repetition.
-
-**Long-term means your next flip will probably be heads.** No. The *long-run relative frequency* approaches 0.5, but that says nothing about the next flip. Each flip is still 50-50. This is the **gambler's fallacy** — the belief that past outcomes influence future ones in a fair game. They don't. The coin has no memory.
-
-**Equally likely means I don't know which outcome will occur.** Not quite. Equally likely means the physical process is symmetric with respect to each outcome — the die is fair, the coin is balanced, the sample is truly random. Ignorance alone doesn't make outcomes equally likely.
-
-### Worked example — the strep test
-
-A rapid strep test has the following accuracy. If a child truly has strep, the test detects it 98% of the time. If a child does *not* have strep, the test incorrectly says they do 15% of the time (the false positive rate). In a pediatric clinic population, about 10% of children with sore throats actually have strep.
-
-You test a child and get a positive result. What is the probability the child actually has strep?
-
-*Given:*
-- $P(\text{truly has strep}) = 0.10$
-- $P(\text{test positive} \mid \text{truly has strep}) = 0.98$
-- $P(\text{test positive} \mid \text{does not have strep}) = 0.15$
-
-*Question:* $P(\text{truly has strep} \mid \text{test positive}) = ?$
-
-This is not one we can answer yet with just sample spaces. It requires conditional probability, which comes later. But notice the structure: the test is highly accurate at detecting strep when it's there. Yet the answer turns out to be closer to 40% than 98%, because strep is rare. Most positive tests are false positives.
-
----
-
-## Concept 2 — Independent vs. mutually exclusive, and the multiplication rule
-
-**Cold open: The card counter and the dealer's glance**
-
-A blackjack player sits at a casino table. The deck has been reshuffled. Over the next twenty minutes, she plays hands one after another. Each hand is independent of the previous one — knowing what happened last hand doesn't change the odds for this hand. The deck composition is the same. The rules are the same. The outcome of hand 1 has no effect on the probability distribution for hand 2.
-
-But at one table, two events are mutually exclusive: I cannot draw the ace of spades and the ace of hearts on the same hand if I'm only drawing one card. If I draw the ace of spades, the event "ace of hearts" cannot happen. These events share no outcomes.
-
-Independence and mutual exclusivity are not the same thing. Understanding the difference is the most common sticking point for intro probability students.
-
-### Independence: One event doesn't change the probability of the other
-
-Two events $A$ and $B$ are **independent** if the probability of $A$ is the same whether or not $B$ has occurred:
-
-$$P(A) = P(A \mid B)$$
-
-The vertical bar means "given that" — $P(A \mid B)$ is read "the probability of $A$ given $B$."
-
-Equivalently, $A$ and $B$ are independent if:
-
-$$P(A \cap B) = P(A) \cdot P(B)$$
-
-The intersection symbol $\cap$ means AND — the probability that both $A$ and $B$ occur is the product of their individual probabilities.
-
-Example: Roll two fair dice. Let $A$ = "first die shows a 3" and $B$ = "second die shows a 5." These are independent. Knowing the first die showed a 3 tells you nothing about the second die. $P(A) = 1/6$, $P(B) = 1/6$, and $P(A \cap B) = (1/6)(1/6) = 1/36$.
-
-### Mutual exclusivity: The events share no outcomes
-
-Two events $A$ and $B$ are **mutually exclusive** if they cannot both occur:
-
-$$P(A \cap B) = 0$$
-
-Example: Draw one card from a standard deck. Let $A$ = "the card is a heart" and $B$ = "the card is a diamond." These are mutually exclusive. A card cannot be both a heart and a diamond. There is no card in both sets.
-
-Notice: if $A$ and $B$ are mutually exclusive, then knowing $B$ occurred means $A$ definitely did not occur. So $P(A \mid B) = 0$. They are *not* independent (unless one of them has probability 0, a degenerate case).
-
-### The multiplication rule: For AND (intersection)
-
-If you want the probability that both $A$ and $B$ occur — that is, $P(A \cap B)$ — you use the multiplication rule:
-
-$$P(A \cap B) = P(A) \cdot P(B \mid A)$$
-
-If $A$ and $B$ are independent, then $P(B \mid A) = P(B)$, so the rule simplifies:
-
-$$P(A \cap B) = P(A) \cdot P(B) \quad \text{(if independent)}$$
-
-But if $A$ and $B$ are dependent, then $P(B \mid A)$ differs from $P(B)$ because the occurrence of $A$ has changed the landscape. You must account for that change.
-
-**Worked example — drawing cards without replacement**
-
-You have a standard 52-card deck. Draw two cards, one at a time, without replacing the first card.
-
-*Question 1:* What is the probability that both cards are hearts?
-
-The first card has 13 hearts out of 52 cards: $P(\text{first is heart}) = 13/52$.
-
-If the first card was a heart, there are now 12 hearts left in a 51-card deck: $P(\text{second is heart} \mid \text{first was heart}) = 12/51$.
-
-So $P(\text{both hearts}) = (13/52) \cdot (12/51) = 156/2652 = 13/221 \approx 0.0588$.
-
-*Question 2:* Compare this to drawing *with* replacement.
-
-If you put the first card back, there are still 13 hearts in 52 cards for the second draw: $P(\text{second is heart} \mid \text{first was heart}) = 13/52 = P(\text{second is heart})$.
-
-The events are independent: $P(\text{both hearts}) = (13/52) \cdot (13/52) = 169/2704 \approx 0.0625$.
-
-Notice the difference: $0.0588$ vs. $0.0625$. Removing the first card changes the odds for the second draw. The events are dependent.
-
-### Common misconceptions
-
-**Independent events are the same as mutually exclusive events.** No. In fact, independent events (where $P(A \cap B) = P(A) \cdot P(B)$ is usually nonzero) cannot be mutually exclusive (where $P(A \cap B) = 0$) unless one of them has probability 0. Two fair dice rolls are independent. Two events like "the card is a heart" and "the card is a diamond" are mutually exclusive but not independent — they are completely dependent (if one happens, the other definitely doesn't).
-
-**Multiply when you see the word "and."** Yes, usually. But be careful: the rule is $P(A \cap B) = P(A) \cdot P(B \mid A)$. You multiply by the conditional probability of the second event given the first, not just by $P(B)$ alone.
-
----
-
-## Concept 3 — Addition rule, conditional probability, and Bayes
-
-**Cold open: The drug test dilemma**
-
-A company tests its employees for illegal drugs. The test is 95% accurate: it correctly identifies 95% of people who use drugs and correctly clears 95% of people who don't. An employee tests positive.
-
-Before firing them, the company asks: how confident can we be they actually use drugs?
-
-The answer depends on the base rate — how common drug use is in the population being tested. If 1% of employees use drugs, a positive test means the employee probably doesn't (false positive is more likely). If 50% use drugs, a positive test is pretty good evidence they do.
-
-This is conditional probability: $P(\text{actually uses drugs} \mid \text{test positive})$. It is not the same as $P(\text{test positive} \mid \text{actually uses drugs})$, which the company already knows is 95%.
-
-### The addition rule: For OR (union)
-
-The probability that at least one of two events occurs — that is, $A$ or $B$ or both — uses the addition rule:
-
-$$P(A \cup B) = P(A) + P(B) - P(A \cap B)$$
-
-Why subtract the intersection? Because $P(A) + P(B)$ counts the outcomes in both sets twice. You must subtract those double-counted outcomes once to get the right total.
-
-If $A$ and $B$ are mutually exclusive (so $P(A \cap B) = 0$), the rule simplifies:
-
-$$P(A \cup B) = P(A) + P(B) \quad \text{(if mutually exclusive)}$$
-
-**Example:** A student is applying to two colleges: A (where she has a 40% chance of admission) and B (where she has a 30% chance). Assuming independence, what is the probability she gets into at least one?
-
-$P(A) = 0.40$, $P(B) = 0.30$, $P(A \cap B) = 0.40 \cdot 0.30 = 0.12$.
-
-$P(\text{at least one}) = 0.40 + 0.30 - 0.12 = 0.58$.
-
-She has a 58% chance of getting into at least one college.
-
-### Conditional probability: Restricting the sample space
-
-The probability of event $A$ given that event $B$ has occurred is:
-
-$$P(A \mid B) = \frac{P(A \cap B)}{P(B)}$$
-
-(assuming $P(B) > 0$)
-
-The key insight: when you know $B$ has occurred, the sample space is no longer the full universe. It is restricted to the outcomes where $B$ is true. You're computing what fraction of those outcomes also have $A$ true.
-
-**Example:** Roll a fair die. Let $B$ = "the result is even" = $\{2, 4, 6\}$. Let $A$ = "the result is less than 5" = $\{1, 2, 3, 4\}$.
-
-The full sample space has six equally likely outcomes. But you're given that $B$ occurred, so the sample space reduces to $\{2, 4, 6\}$ — three outcomes.
-
-Of those three outcomes, how many are also in $A$? Only 2 and 4, so two outcomes.
-
-$P(A \mid B) = 2/3$.
-
-Using the formula: $P(A \cap B) = P(\{2, 4\}) = 2/6 = 1/3$. $P(B) = 3/6 = 1/2$. So $P(A \mid B) = (1/3) / (1/2) = 2/3$. It matches.
-
-### The complement rule
-
-The complement of an event $A$ is the event "not $A$," written $A'$:
-
-$$P(A) + P(A') = 1$$
-
-or equivalently:
+The probability of the complement — the event *not* $A$, written $A'$ — is:
 
 $$P(A') = 1 - P(A)$$
 
-This is simple but powerful. Sometimes it is easier to compute the probability that something doesn't happen and subtract from 1 than to compute the probability that it does.
-
-**Example:** A archer hits her target 75% of the time. She takes three shots. What's the probability she misses at least one?
-
-It's easier to compute the complement: the probability she hits *all three* is $0.75^3 \approx 0.422$. So the probability she misses at least one is $1 - 0.422 = 0.578$.
-
-### Bayes' theorem: Updating belief with evidence
-
-Here is the formula that resolves the drug test puzzle and the medical screening puzzle:
-
-$$P(A \mid B) = \frac{P(B \mid A) \cdot P(A)}{P(B)}$$
-
-This is Bayes' theorem (from Thomas Bayes, an 18th-century clergyman and mathematician). It is profound because it tells you how to update your belief about something ($A$) given new evidence ($B$).
-
-- $P(A)$ is the **prior** — what you believed about $A$ before seeing evidence $B$.
-- $P(B \mid A)$ is the **likelihood** — how probable the evidence is if $A$ is true.
-- $P(B)$ is the **marginal probability** of the evidence — how likely the evidence is overall.
-- $P(A \mid B)$ is the **posterior** — what you should believe about $A$ after seeing evidence $B$.
-
-**Worked example — the mammogram revisited**
-
-*Given:*
-- Prior: $P(\text{cancer}) = 0.01$ (1% of screened women have cancer)
-- Likelihood: $P(\text{positive test} \mid \text{cancer}) = 0.98$ (the test catches 98% of cancer cases)
-- False positive rate: $P(\text{positive test} \mid \text{no cancer}) = 0.10$ (the test wrongly signals cancer in 10% of cancer-free women)
-
-*Question:* A woman tests positive. What is $P(\text{cancer} \mid \text{positive test})$?
-
-*Step 1:* Compute $P(\text{positive test})$ — the probability of a positive test regardless of whether cancer is present.
-
-$$P(\text{positive test}) = P(\text{positive} \mid \text{cancer}) \cdot P(\text{cancer}) + P(\text{positive} \mid \text{no cancer}) \cdot P(\text{no cancer})$$
-
-$$= 0.98 \cdot 0.01 + 0.10 \cdot 0.99 = 0.0098 + 0.099 = 0.1088$$
-
-*Step 2:* Apply Bayes' theorem.
-
-$$P(\text{cancer} \mid \text{positive}) = \frac{P(\text{positive} \mid \text{cancer}) \cdot P(\text{cancer})}{P(\text{positive})} = \frac{0.98 \cdot 0.01}{0.1088} = \frac{0.0098}{0.1088} \approx 0.090$$
-
-The woman has about a 9% chance of actually having cancer.
-
-This seems counterintuitive — the test is 98% accurate at detecting cancer. But cancer is rare. Most positive tests come from the much larger pool of cancer-free women being falsely flagged. The base rate matters.
-
-### Working with contingency tables and tree diagrams
-
-For complex problems with multiple stages, two tools help organize the calculation:
-
-**Contingency tables** organize outcomes in rows and columns, making it easy to compute intersections and conditionals.
-
-| | Test positive | Test negative | Total |
-|---|---|---|---|
-| Cancer | 98 | 2 | 100 |
-| No cancer | 99 | 891 | 990 |
-| Total | 197 | 893 | 1,000 |
-
-This table is built from: 1,000 women screened, 1% have cancer (100), 99% don't (900). Of the 100 with cancer, 98% test positive (98) and 2% test negative (2). Of the 900 without cancer, 10% test positive (90) and 90% test negative (810).
-
-To find $P(\text{cancer} \mid \text{positive})$: look at the "positive test" column. Of the 197 positive tests, 98 are cancer cases. So $P(\text{cancer} \mid \text{positive}) = 98/197 \approx 0.497$.
-
-Wait, that's closer to 50%, not 9%. Let me recalculate with the numbers I gave: if 10% of cancer-free women test positive, that's 0.10 \cdot 900 = 90 false positives, not 99. So the table should be:
-
-| | Test positive | Test negative | Total |
-|---|---|---|---|
-| Cancer | 98 | 2 | 100 |
-| No cancer | 90 | 810 | 900 |
-| Total | 188 | 812 | 1,000 |
-
-Now $P(\text{cancer} \mid \text{positive}) = 98/188 \approx 0.521$, still roughly 50%. The discrepancy with my earlier calculation suggests I made an error — let me recompute more carefully.
-
-Actually, $P(\text{positive}) = 98 + 90 = 188$ out of 1,000, so $P(\text{positive}) = 0.188$. Then:
-
-$$P(\text{cancer} \mid \text{positive}) = \frac{0.98 \cdot 0.01}{0.188} = \frac{0.0098}{0.188} \approx 0.052$$
-
-That's about 5%, which is closer to the intuition that most positive tests are false positives. The contingency table method is often clearer: it forces you to count actual outcomes rather than relying on formulas.
-
-**Tree diagrams** organize conditional probabilities in stages. At each branch, the probabilities condition on what has already happened. Multiplying along a path gives the joint probability; summing across paths that lead to the same endpoint gives the marginal probability.
-
-Common misconceptions
-
-**Bayes' theorem is only for medical tests.** No. Any time you have a prior belief and new evidence, and you want to update your belief, Bayes' theorem applies. It is the mathematics of learning from data.
-
-**P(A|B) is the same as P(B|A).** They are usually very different. $P(\text{positive} \mid \text{cancer}) = 0.98$ (very likely to test positive if you have cancer) but $P(\text{cancer} \mid \text{positive}) = 0.052$ (less likely to have cancer given a positive test). This inversion is the core of Bayes' theorem.
-
-**If the prior is 1%, the posterior can't be more than 1%.** Wrong. Very strong evidence can flip a small prior into a substantial posterior. If a prior is 1% but you get 100 pieces of evidence that each 99% favor the alternative, the posterior can be very large.
+This is more useful than it looks. Sometimes it is much easier to count the outcomes where something does *not* happen and subtract from 1. A bridge player who wants the probability of being dealt at least one ace can either count all the hands with one or more aces (complicated) or subtract from 1 the probability of being dealt no aces (one calculation).
 
 ---
 
-## Integration — from puzzle to calculation
+## The gambler's fallacy and what probability does not say
 
-Return to the three puzzles we opened with. Each one requires a clear understanding of sample spaces, events, independence, and conditional probability.
+A casino roulette wheel lands on red seventeen times in a row. Many gamblers, watching this, feel certain that black is "due." They bet heavily on black.
 
-**The strep test:** The child tests positive. But positive tests are common in a population where strep is rare. A contingency table of 1,000 children with sore throats, where 10% have strep, shows that a positive test has maybe a 40% chance of meaning actual strep (depending on the test's false positive rate). The pediatrician must know this to counsel the parent appropriately.
+This is called the gambler's fallacy, and it costs people real money.
 
-**The drug test:** An employee tests positive. But the base rate of drug use in the employee population is low. A test that is 95% accurate catches most users but also generates false positives among the 99% who don't use drugs. A single positive test is not cause for termination; a second test or a more specific test is needed.
+The wheel has no memory. It does not know it has landed on red seventeen times. Each spin is independent of every previous spin. The probability of black on the eighteenth spin is the same as it was on the first: roughly $18/38 \approx 0.47$ on an American wheel.
 
-**The mammogram:** A woman in her fifties tests positive. The test is accurate, but cancer is rare. Bayes' theorem reveals that her actual chance of having cancer is much lower than the test's accuracy would suggest. The key is distinguishing the test's accuracy (likelihood given cancer) from the post-test probability of cancer (posterior).
+What probability *does* say is this: in the long run, the fraction of spins landing on red approaches the true probability. But "in the long run" says nothing about what happens next. The past outcomes don't pull future outcomes toward some average. They simply are what they are.
 
-All three share a structure: you know how likely the evidence is given the hypothesis ($P(\text{evidence} \mid \text{hypothesis})$), but you want to know how likely the hypothesis is given the evidence ($P(\text{hypothesis} \mid \text{evidence})$). Bayes' theorem does that translation.
+This is the hard thing to internalize about probability. It describes populations and long-run frequencies. It says very little about any single event.
+
+<!-- → [CHART: Line chart showing 5 simulated runs of 500 roulette spins — y-axis is running fraction of "red" outcomes, x-axis is spin number. All lines start erratically (0 or 1) and converge toward 0.474 by spin 500. Student should see: short-run variability is enormous; convergence is real but says nothing about the next spin.] -->
+
+---
+
+## Two events: AND and OR
+
+When we want the probability of multiple events, we need to understand how events combine.
+
+**AND: the multiplication rule**
+
+The probability that both event $A$ and event $B$ occur is:
+
+$$P(A \cap B) = P(A) \cdot P(B \mid A)$$
+
+The symbol $\cap$ means "and" — outcomes that are in both sets. The vertical bar means "given that." So $P(B \mid A)$ is the probability that $B$ occurs given that $A$ has already occurred.
+
+Sometimes, knowing $A$ happened doesn't change the odds for $B$ at all. In that case $P(B \mid A) = P(B)$, and the rule simplifies:
+
+$$P(A \cap B) = P(A) \cdot P(B)$$
+
+When this simpler formula holds, we say $A$ and $B$ are **independent**. One event has no effect on the probability of the other.
+
+Roll two fair dice. The result of the first die has no effect on the result of the second die. They are independent. The probability of a 3 on the first and a 5 on the second is $(1/6)(1/6) = 1/36$.
+
+But suppose instead you're drawing cards from a deck without replacement. Draw one card; now draw a second without putting the first back. Is the second draw independent of the first?
+
+No. If the first card was the ace of spades, then the second card cannot be the ace of spades. The sample space has changed — 51 cards remain instead of 52, and the first ace of spades is gone. Knowing what the first card was changes the probabilities for the second draw.
+
+The probability both cards are hearts: the first card is a heart with probability $13/52$. If the first card was a heart, there are now 12 hearts among 51 remaining cards. So the second card is a heart with probability $12/51$.
+
+$$P(\text{both hearts}) = \frac{13}{52} \cdot \frac{12}{51} = \frac{156}{2652} \approx 0.059$$
+
+Compare this to drawing with replacement — putting the first card back before drawing the second. Now the draws are independent:
+
+$$P(\text{both hearts}) = \frac{13}{52} \cdot \frac{13}{52} \approx 0.063$$
+
+The numbers are close but not equal. Whether you replace or not changes the answer. It changes the answer because replacement restores independence; without it, the events are dependent.
+
+**OR: the addition rule**
+
+The probability that at least one of two events occurs — $A$ or $B$ or both — is:
+
+$$P(A \cup B) = P(A) + P(B) - P(A \cap B)$$
+
+The union symbol $\cup$ means "or." Why subtract the intersection? Because $P(A) + P(B)$ counts the outcomes where both occur twice. You need to subtract once to avoid double-counting.
+
+A student applies to two colleges: college A (40% chance of admission) and college B (30% chance). Assuming independence, the probability of getting into at least one is:
+
+$$P(A \cup B) = 0.40 + 0.30 - (0.40)(0.30) = 0.70 - 0.12 = 0.58$$
+
+There's a special case. If $A$ and $B$ are **mutually exclusive** — they share no outcomes, so they cannot both occur — then $P(A \cap B) = 0$, and the addition rule simplifies:
+
+$$P(A \cup B) = P(A) + P(B) \quad \text{(mutually exclusive)}$$
+
+A single card cannot be both a heart and a diamond. "Heart" and "diamond" are mutually exclusive. The probability the card is a heart or a diamond is $13/52 + 13/52 = 26/52 = 1/2$.
+
+---
+
+## The most important distinction: independence vs. mutual exclusivity
+
+Students confuse these constantly. They are not the same thing. They are not even close to the same thing.
+
+**Mutually exclusive** means the events cannot both happen. If $A$ occurs, $B$ definitely doesn't. They share no outcomes.
+
+**Independent** means knowing whether $A$ occurred doesn't change the probability that $B$ occurs. They don't affect each other.
+
+Here is the key: if two events are mutually exclusive and both have positive probability, they cannot be independent. Why? Because if you know $A$ occurred, you immediately know $B$ did *not* occur — so $P(B \mid A) = 0$, which is different from $P(B)$. Knowing $A$ happened changed the probability of $B$ (from positive to zero). That's dependence.
+
+Think of it this way. "Heart" and "diamond" are mutually exclusive — one card can't be both. But they're not independent — if you know the card is a heart, you know it's not a diamond. The events are completely dependent.
+
+"The first die shows a 3" and "the second die shows a 5" are independent — knowing one tells you nothing about the other. They're not mutually exclusive — both could happen on the same roll. And in fact they will happen together with probability $1/36$.
+
+Independent events usually can and do sometimes happen together. Mutually exclusive events never do. Keep these straight.
+
+<!-- → [TABLE: 2×2 classification grid — rows: "Can occur together / Cannot occur together"; columns: "Knowing A changes P(B) / Knowing A does not change P(B)". Fill in each cell with an example and the label (Dependent & not ME; Independent; Mutually exclusive = always dependent; impossible for positive-probability events). Goal: student sees at a glance that the two concepts are orthogonal axes, not synonyms.] -->
+
+---
+
+## Conditional probability
+
+Here is where the mathematics gets genuinely interesting.
+
+The **conditional probability** of $A$ given $B$ is:
+
+$$P(A \mid B) = \frac{P(A \cap B)}{P(B)}$$
+
+Intuitively: you've learned that $B$ occurred. The sample space has been restricted to the outcomes where $B$ is true. You want the fraction of those outcomes that also have $A$ true.
+
+Roll a fair die. You learn the result is even. Given this, what's the probability the result is less than 5?
+
+The event "even" restricts the sample space to $\{2, 4, 6\}$. Of these three equally likely outcomes, two are less than 5: $\{2, 4\}$. So $P(\text{less than 5} \mid \text{even}) = 2/3$.
+
+Using the formula: $P(\text{less than 5 AND even}) = P(\{2, 4\}) = 2/6 = 1/3$. And $P(\text{even}) = 3/6 = 1/2$. So $P(\text{less than 5} \mid \text{even}) = (1/3)/(1/2) = 2/3$. Same answer.
+
+This formula has a rearrangement that is just the multiplication rule again:
+
+$$P(A \cap B) = P(B) \cdot P(A \mid B)$$
+
+The two forms are the same equation written differently. Learn to flip between them.
+
+---
+
+## Bayes' theorem: how evidence changes belief
+
+Now we can resolve the mammogram puzzle.
+
+The doctor's error was confusing $P(\text{positive} \mid \text{cancer})$ with $P(\text{cancer} \mid \text{positive})$. These are different questions. The test's 98% accuracy tells you the first. The patient wants to know the second.
+
+Thomas Bayes, an 18th-century English minister with apparently a lot of time to think, worked out the relationship between these two reversed conditionals. The result is:
+
+$$P(A \mid B) = \frac{P(B \mid A) \cdot P(A)}{P(B)}$$
+
+Let me name the pieces so you can see what each one does.
+
+$P(A)$ is called the **prior** — your belief about $A$ before you learned anything about $B$. Before the test, the woman's probability of having cancer is just the base rate in her population: $P(\text{cancer}) = 0.01$.
+
+$P(B \mid A)$ is the **likelihood** — how probable the evidence is if the hypothesis is true. Here, $P(\text{positive} \mid \text{cancer}) = 0.98$.
+
+$P(B)$ is the **marginal probability** of the evidence — how likely you are to see a positive test result regardless of whether cancer is present. This requires accounting for both possibilities.
+
+$P(A \mid B)$ is the **posterior** — your updated belief after seeing the evidence. This is what the patient needs.
+
+Let me compute $P(\text{positive})$ first, using the **law of total probability**:
+
+$$P(\text{positive}) = P(\text{positive} \mid \text{cancer}) \cdot P(\text{cancer}) + P(\text{positive} \mid \text{no cancer}) \cdot P(\text{no cancer})$$
+
+With a false positive rate of $P(\text{positive} \mid \text{no cancer}) = 0.10$:
+
+$$P(\text{positive}) = (0.98)(0.01) + (0.10)(0.99) = 0.0098 + 0.099 = 0.1088$$
+
+Now apply Bayes:
+
+$$P(\text{cancer} \mid \text{positive}) = \frac{(0.98)(0.01)}{0.1088} = \frac{0.0098}{0.1088} \approx 0.090$$
+
+About 9%.
+
+The test is accurate. But cancer is rare. Only 1% of women in this population have it. When the test produces a positive result, it is far more likely to have flagged one of the 99 cancer-free women falsely than to have correctly identified one of the 1 women who has it. The rare true positives are swamped by the more common false positives.
+
+---
+
+## Making Bayes intuitive: the frequency table
+
+Most people find the formula less clear than counting actual cases. Here's an equivalent approach.
+
+Imagine 10,000 women screened.
+
+1% have cancer: 100 women.
+99% don't: 9,900 women.
+
+Of the 100 with cancer: 98% test positive = 98 women. 2 test negative.
+Of the 9,900 without cancer: 10% test positive = 990 women. 8,910 test negative.
+
+Total who test positive: $98 + 990 = 1,088$.
+
+Of those 1,088 positive tests, how many actually have cancer? 98.
+
+$$P(\text{cancer} \mid \text{positive}) = \frac{98}{1088} \approx 0.090$$
+
+Same answer. The frequency table forces you to see what you're actually counting — and it makes the result intuitive. Almost all positive tests come from the large pool of cancer-free women. The true positives are a small fraction.
+
+<!-- → [INFOGRAPHIC: Icon array of 10,000 women (100×100 grid of small person icons). 100 icons shaded red = cancer. Of those 100, 98 circled = true positives. 9,900 icons in grey = no cancer. Of those, 990 circled in orange = false positives. Final callout: "Of 1,088 circled women, only 98 have cancer." Visual makes the base-rate swamping viscerally clear.] -->
+
+Notice what happens when you raise the base rate. Suppose cancer affects 10% of this population instead of 1%. Now:
+
+1,000 women have cancer; 9,000 don't.
+980 test positive (true positives); 900 false positives.
+Total positives: 1,880.
+$P(\text{cancer} \mid \text{positive}) = 980/1880 \approx 0.52$.
+
+The same test, on the same kind of woman, gives a very different posterior — because the prior changed. The base rate matters as much as the test's accuracy.
+
+This is the insight Bayes' theorem encodes. The evidence doesn't stand alone. Evidence updates prior beliefs. The strength of the update depends on both the quality of the evidence and where you started.
+
+<!-- → [CHART: Line chart — x-axis: base rate (prior) from 0% to 50%; y-axis: P(cancer | positive test). Two curves: one for the 98%/10% test parameters from this chapter, one for a 95%/5% test. Student should see: both curves start near zero at low base rates and climb; the posterior is highly sensitive to the prior, especially at low base rates. The knee of the curve is the key teaching point.] -->
+
+---
+
+## What the drug test gets wrong
+
+Return to the company testing employees for drug use. The test is 95% accurate — 95% sensitivity (catches 95% of users), 95% specificity (clears 95% of non-users). An employee tests positive.
+
+Suppose 5% of employees actually use drugs. Run the frequency table on 10,000 employees.
+
+500 use drugs: 475 test positive (true positives), 25 test negative.
+9,500 don't use drugs: 475 test positive (false positives), 9,025 test negative.
+
+Total positives: 950.
+Of those, 475 are true positives.
+
+$$P(\text{uses drugs} \mid \text{positive}) = \frac{475}{950} = 0.50$$
+
+A 95%-accurate test, applied to a population where 5% use drugs, gives a coin-flip result on a positive test. There are equal numbers of true positives and false positives.
+
+This is not a flaw in the test. It is a consequence of the base rate. A policy of firing employees who test positive will fire as many innocent people as guilty ones. Whether that is acceptable is not a mathematical question. But the mathematics is necessary before you can make that judgment clearly.
+
+---
+
+## Two tools for organizing complex problems
+
+When a problem involves multiple stages or multiple variables, two tools help keep the calculation straight.
+
+**Contingency tables** organize outcomes in rows and columns. Each cell shows the count of cases with a particular combination of values. Marginal totals give you $P(A)$ and $P(B)$ directly; cell counts give you $P(A \cap B)$; and dividing a cell by its row or column total gives a conditional probability.
+
+**Tree diagrams** organize conditional probabilities in stages. You draw branches at each stage, label them with the probability of that branch given the preceding path, and multiply along a path to get a joint probability. To find a marginal probability, sum across all paths that lead to the same outcome.
+
+Both tools do the same thing: they make the bookkeeping visible. They force you to track the full set of possibilities so you don't accidentally leave something out or double-count something. Which one to use depends on the problem's structure — trees work well for sequential events; tables work well for two categorical variables measured simultaneously.
+
+<!-- → [IMAGE: Side-by-side comparison — left: a two-stage tree diagram for the mammogram problem (first branch: cancer/no cancer; second branch from each: positive/negative test), with joint probabilities written at the end of each path and marginal probability computed by summing paths. Right: the equivalent contingency table with the same numbers. Caption: "Both tools encode the same information; choose based on your problem's structure."] -->
+
+---
+
+## The structure of all conditional reasoning
+
+Here is what this chapter teaches in the most compressed form I can give it.
+
+There are two directions of conditional probability. From hypothesis to evidence: $P(\text{evidence} \mid \text{hypothesis})$. From evidence to hypothesis: $P(\text{hypothesis} \mid \text{evidence})$. These feel like the same question. They are not.
+
+Scientists and tests and measurements give you the first. You want the second. Bayes' theorem does the translation. And the translation requires the prior — the base rate — which is not in the test itself. It is in the world.
+
+This is why a test that is 98% accurate can give you a result that is only 9% reliable. The accuracy of a test and the reliability of its result are not the same thing. Confusing them is not stupidity. It is a failure of probability training. This chapter is that training.
+
+The mammogram patient who asks "given that I tested positive, how likely am I to have cancer?" is asking the right question. The probability machinery you now have is what lets you answer it — precisely, without pretending to more certainty than the numbers warrant, and without the kind of intuitive error that can send a healthy woman toward unnecessary surgery.
 
 ---
 
@@ -348,59 +292,32 @@ All three share a structure: you know how likely the evidence is given the hypot
 
 ### Warm-up
 
-**Exercise 3.1** *(LO: sample space and equally likely outcomes.)* A student rolls a fair, six-sided die and flips a fair coin. (a) Describe the sample space. (b) What is the probability the die shows an even number and the coin shows heads?
+**3.1** *(Sample space and equally likely outcomes.)* A student draws one card at random from a standard 52-card deck. (a) List the sample space for the suit of the card. (b) What is the probability the card is a club? (c) What is the probability the card is not a club?
 
-**Exercise 3.2** *(LO: identify events and compute probability.)* From a standard 52-card deck, one card is drawn. (a) What is the probability the card is a heart or a king? (b) What is the probability the card is not a heart?
+**3.2** *(Complement rule.)* A fair six-sided die is rolled three times. Rather than counting directly, use the complement: what is the probability that at least one roll shows a 6?
 
-**Exercise 3.3** *(LO: independence vs. mutually exclusive.)* Consider the events "rolling a die and getting a 3" and "flipping a coin and getting heads." (a) Are these events independent? (b) Are these events mutually exclusive? Explain your reasoning for each.
+**3.3** *(Identifying independence vs. mutual exclusivity.)* For each pair of events, state whether they are independent, mutually exclusive, both, or neither — and briefly explain why. (a) Rolling a 4 on a die; rolling an even number on the same roll. (b) Flipping heads on coin 1; flipping tails on coin 2. (c) Drawing an ace from a deck; drawing a king on the same single draw.
 
 ### Application
 
-**Exercise 3.4** *(LO: multiplication rule with dependence.)* A box contains 6 red marbles and 4 blue marbles. You draw two marbles without replacement. (a) What is the probability both are red? (b) What is the probability the first is red and the second is blue?
+**3.4** *(Multiplication rule — dependent events.)* A bag holds 5 red chips and 3 blue chips. You draw two chips without replacement. (a) What is the probability both chips are red? (b) What is the probability the first chip is red and the second is blue?
 
-**Exercise 3.5** *(LO: addition rule.)* A student applies to two colleges. The probability of acceptance at college A is 0.35, at college B is 0.50. Assuming independence, what is the probability the student is accepted to at least one college?
+**3.5** *(Addition rule.)* A software test suite has two independent components: component A fails 8% of the time, component B fails 5% of the time. What is the probability that at least one component fails on a given run?
 
-**Exercise 3.6** *(LO: conditional probability.)* In a class of 100 students, 60 are female, 40 are male. Of the females, 20 play soccer. Of the males, 15 play soccer. (a) What is the probability a randomly selected student plays soccer? (b) What is the probability a student is female given that the student plays soccer?
+**3.6** *(Conditional probability.)* In a university's intro statistics course, 55% of students are first-year students and 45% are upperclassmen. Of first-year students, 30% earn an A. Of upperclassmen, 45% earn an A. A randomly selected student earned an A. What is the probability that student is a first-year student?
 
 ### Synthesis
 
-**Exercise 3.7** *(LO: contingency table and Bayes.)* A test for a rare disease has a 99% sensitivity (correctly identifies 99% of people with the disease) and 98% specificity (correctly clears 98% of people without the disease). The disease affects 0.1% of the population. (a) Use a contingency table to find the probability a person who tests positive actually has the disease. (b) Interpret your result.
+**3.7** *(Bayes' theorem — frequency table method.)* A screening test for a genetic condition has 97% sensitivity and 92% specificity. The condition affects 2% of the population. (a) Build a frequency table for 100,000 people screened. (b) What is the probability a person who tests positive actually has the condition? (c) What is the probability a person who tests negative is actually clear?
 
-**Exercise 3.8** *(LO: tree diagram with multiple stages.)* An urn contains 5 red balls and 3 blue balls. Draw two balls, one at a time, without replacement. (a) Use a tree diagram to find the probability of drawing one red and one blue (in either order). (b) Find the probability both balls are the same color.
+**3.8** *(Tree diagram.)* A factory has two machines producing the same part. Machine 1 produces 60% of all parts and has a 3% defect rate. Machine 2 produces 40% and has a 5% defect rate. A part is drawn at random and found to be defective. (a) Draw a tree diagram for this problem. (b) What is the probability the defective part came from Machine 1?
 
 ### Challenge
 
-**Exercise 3.9** *(LO: integrate multiple concepts.)* A company manufactures widgets. The probability a widget is defective is 0.02. Defective widgets are caught by quality control 95% of the time. Non-defective widgets pass inspection 98% of the time. (a) If a widget fails inspection, what is the probability it is actually defective? (b) If a widget passes inspection, what is the probability it is actually non-defective?
+**3.9** *(Base rate sensitivity.)* Return to the mammogram scenario: sensitivity 98%, false positive rate 10%. (a) Compute $P(\text{cancer} \mid \text{positive})$ for base rates of 1%, 5%, 10%, and 20%. (b) At what base rate does a positive test become more likely to indicate cancer than not? (c) What does this tell you about the appropriateness of mass screening programs for rare conditions?
 
-**Exercise 3.10** *(LO: open-ended reasoning.)* Three cards are drawn from a standard deck without replacement. (a) What is the probability all three are spades? (b) What is the probability at least one is a heart? (c) If the first two cards are spades, what is the probability the third is also a spade?
+**3.10** *(Connecting to design.)* A spam filter is 99% accurate: it correctly flags 99% of spam and correctly passes 99% of legitimate email. (a) If 20% of all email is spam, what fraction of flagged emails are actually spam? (b) If the filter is applied in a corporate setting where only 2% of email is spam, what fraction of flagged emails are legitimate? (c) A colleague argues: "It's 99% accurate, so it's fine." What is wrong with this reasoning, and what additional information does your colleague need?
 
----
-
-## Chapter summary
-
-You can now do three things you probably could not do before.
-
-You can **construct a sample space** for an experiment and represent it as a list, a tree diagram, or a contingency table. You understand that the sample space must be exhaustive and mutually exclusive, and that probabilities of events are computed as the ratio of favorable outcomes to total outcomes (when all outcomes are equally likely).
-
-You can **distinguish between independence and mutual exclusivity**. You know that independent events do not affect each other's probabilities, while mutually exclusive events cannot occur together. You can apply the multiplication rule correctly, adjusting for dependence.
-
-You can **use conditional probability and Bayes' theorem to update belief in light of evidence**. You understand that a test's accuracy (likelihood given hypothesis) is different from the probability of the hypothesis given a positive test (posterior). You can build a contingency table or a tree diagram to organize data and reason through multi-stage probability problems.
-
-The thing to watch for, going forward, is **base rates**. Intuition fails when we ignore how common something is in the population. A test that is 99% accurate is still likely to produce false positives if the condition is rare. A policy that seems 95% fair can still systematically disadvantage a minority group if applied to millions of decisions. Probability thinking—disciplined, careful, grounded in sample spaces and base rates—is your defense against being fooled by numbers.
-
-What you should now be able to teach a friend: why a positive test doesn't necessarily mean what you think it means; the difference between independent and mutually exclusive; how to organize a probability problem so the calculation becomes straightforward.
-
----
-
-## Connections forward
-
-In Chapter 4, you will meet the random variable — a quantity that takes on values according to a probability distribution. That chapter applies the machinery you've learned here to measurable quantities: the number of heads in 10 coin flips, the number of defective items in a batch, the lifetime of a lightbulb. Probability becomes a tool for modeling data.
-
-Chapter 7 extends this to one of the most important distributions: the binomial distribution, which counts successes across repeated independent trials. The multiplication rule you learned here — multiplying independent probabilities — is the backbone of that distribution.
-
-And in Chapters 9 and 10, when you learn hypothesis testing, you will use probability in reverse. You'll ask: "If this assumption were true, how likely would my observed data be?" The answer comes from probability calculations like the ones you've just mastered. Hypothesis testing is conditional probability applied to scientific reasoning.
-
-For now, the skill is this: when you see a number reported as a probability or a likelihood — a weather forecast, a medical test result, a polling prediction — you can ask the questions that let you interpret it. What is the base rate? What is the false positive rate? Is this the probability of the evidence given the hypothesis, or the probability of the hypothesis given the evidence? These questions, and the ability to work through the math to answer them, are what this chapter gives you.
 ---
 
 ## LLM Exercise — Chapter 3: Probability Topics (Analyze One Dataset Project)
@@ -475,12 +392,11 @@ between the two variables, made visible.
 
 **Preview of next chapter:** Chapter 4 covers discrete random variables — pmfs, E(X), binomial, Poisson. You'll identify a discrete variable in your dataset and compute its expected value and SD.
 
-
 ---
 
 ## 🕰️ AI Wayback Machine
 
-**Andrey Kolmogorov** was Soviet mathematician who axiomatized probability theory in 1933 — the foundation of all modern statistical reasoning.
+**Andrey Kolmogorov** was a Soviet mathematician who axiomatized probability theory in 1933 — the foundation of all modern statistical reasoning.
 
 **Run this:**
 
