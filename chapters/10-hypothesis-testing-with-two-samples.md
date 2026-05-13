@@ -1,422 +1,176 @@
 # Chapter 10 — Hypothesis Testing with Two Samples
+*When One Group Isn't Enough to Tell You Anything.*
 
-## Three title options
+The question that drives almost everything in applied statistics is not "what is this group like?" It is "are these two groups different?"
 
-1. **Comparing Two Groups: When one sample isn't enough to answer the question**
-2. **Does This Difference Matter? Testing whether two groups really are different**
-3. **Two Means, Two Proportions: The machinery for comparing samples and deciding what's real**
+Does the drug work better than the placebo? Does the new manufacturing process produce fewer defects than the old one? Does the unemployment rate in one city genuinely exceed the other's, or did the survey just happen to catch more unemployed people in one place? Does the rehabilitation protocol actually help, or did patients improve simply because time passed?
 
----
+In each case you have two groups. You measure something in each. You observe a difference. And then you face the central question: is this difference real, or is it noise?
 
-## TL;DR
-
-When you have two groups—a treatment and a control, two manufacturing lines, two cities—you need to know whether a difference you observe in their sample statistics reflects a real difference in the populations they come from or just sampling noise. We extend the one-sample hypothesis test machinery from Chapter 9 to this case. The key insight: the difference between two sample means (or two sample proportions) itself follows a distribution. We can standardize it, compare it to a critical value, and ask a precise question: *if these two populations were really identical, how surprising would this observed difference be?*
+The machinery from Chapter 9 — null hypothesis, test statistic, p-value — does not change. What changes is the thing being tested. Now the null hypothesis is not "this population has mean 50." It is "these two populations have the same mean." And that shift from one group to two introduces a new random variable that we have not seen before: the difference between two sample means.
 
 ---
 
-## Cold open: The moment the comparison begins
+## The difference as a random variable
 
-It is 2024. A pharmaceutical company is running a Phase III clinical trial for a new anxiety medication. Half the enrolled patients (160 people) receive the drug. Half (160 people) receive an inert placebo. Neither the patients nor the clinicians administering the study know which is which—a design called **blinding** that protects against expectation bias, where believing you're getting medicine can make you feel better whether you're actually getting medicine or not.
+Start with the fundamental idea. You draw a sample from Population 1 and compute its mean, $\bar{x}_1$. You draw an independent sample from Population 2 and compute $\bar{x}_2$. The difference $\bar{x}_1 - \bar{x}_2$ is a number. But it is also a random variable — if you repeated the whole process, drawing fresh samples each time, you would get a different difference. That difference has a distribution, a mean, and a standard deviation.
 
-After eight weeks, the researchers measure anxiety symptom reduction using a validated questionnaire. The drug group shows a mean reduction of 12.4 points on the scale, with standard deviation 4.8. The placebo group shows a mean reduction of 10.1 points, with standard deviation 4.2.
+What is the distribution of $\bar{x}_1 - \bar{x}_2$?
 
-Difference: 12.4 − 10.1 = 2.3 points.
+<!-- → [DIAGRAM: Sampling distribution of the difference of two means — show two population distributions (Population 1 and Population 2) on the left, arrows pointing to their respective sampling distributions of x̄₁ and x̄₂, then a third panel showing the resulting distribution of x̄₁ − x̄₂ centered at μ₁ − μ₂ (zero under H₀). Student should see how variance adds across independent sources.] -->
 
-The company's medical team looks at that 2.3-point gap and asks: *Is this a real effect, or did we just happen to recruit slightly more anxious people into the placebo group by chance?*
+The Central Limit Theorem tells you that each sample mean is approximately normally distributed. And there is a general rule about the sum or difference of independent normal random variables: it is also normal. So the difference of two sample means is approximately normal. Its mean is $\mu_1 - \mu_2$, the true difference between population means. Under the null hypothesis that $\mu_1 = \mu_2$, this mean is zero.
 
-That question—and the mathematical machinery to answer it—is what this chapter teaches. We'll see how to test whether two groups are genuinely different, when the difference is large enough to matter, and what assumptions we need to make along the way. We'll test differences in means (the anxiety trial above) and differences in proportions (does one city have a higher unemployment rate than another?), and we'll work through paired data (before-and-after measurements on the same person, where the pairing itself reduces noise).
-
-### Learning objectives
-
-By the end of this chapter you will be able to:
-
-- **Construct and interpret** hypothesis tests for the difference between two independent population means (using both pooled and unpooled variance).
-- **Conduct** a paired (matched-pairs) t-test for dependent samples.
-- **Test** whether two population proportions differ significantly.
-- **Calculate** the standard error of a difference, understand why it combines the two sample variances, and interpret what it measures.
-- **Recognize** when to use pooled vs. unpooled variance, when samples are paired vs. independent, and how sample size affects the choice of test.
-- **Interpret** p-values, effect sizes (Cohen's *d*), and confidence intervals in the context of two-sample comparisons.
-
-### Prerequisites
-
-Chapter 9 (Hypothesis Testing with One Sample), Chapter 7 (The Central Limit Theorem), Chapter 2 (Descriptive Statistics). You should be fluent with the null and alternative hypotheses, test statistics, p-values, and the t-distribution from Chapter 9. You should understand the standard error and the central limit theorem.
-
-### Why this chapter matters
-
-Medicine, policy, and product development all work by comparison. Does this treatment work better than the alternative? Does this group earn more than that group? Does this manufacturing process produce fewer defects? The question is almost never about a single sample in isolation. It is about whether two things differ. This chapter gives you the framework to answer that question rigorously, with an honest assessment of when the difference is large enough to be convincing.
-
----
-
-## Concept 1: Independent Samples and the Difference of Means
-
-**Cold open: Two manufacturing plants, one question**
-
-A company manufactures automotive brake pads at two plants: one in the Midwest, one on the West Coast. Both are supposed to produce pads that last an average of 50,000 miles. The quality team samples 35 pads from the Midwest plant and tests them to failure. Mean lifespan: 49,200 miles, standard deviation 3,100 miles. They sample 42 pads from the West Coast plant. Mean lifespan: 50,800 miles, standard deviation 2,900 miles.
-
-The Midwest pads lasted 1,600 miles less, on average. Is the Midwest plant drifting out of specification? Or did the sample just happen to catch Midwest pads on an off day?
-
-This is the structure of an **independent two-sample problem**. Two groups. No natural pairing between them (a specific pad from the Midwest is not paired with a specific pad from the West Coast). The question: do the populations they come from have the same mean?
-
-### From one sample to two: The difference as a random variable
-
-In Chapter 9, you tested whether a single sample mean came from a hypothesized population. The test statistic was:
-
-$$t = \frac{\bar{x} - \mu_0}{\text{SE}(\bar{x})} = \frac{\bar{x} - \mu_0}{s/\sqrt{n}}$$
-
-Now you have two sample means. The central limit theorem tells us each one is approximately normally distributed (or t-distributed, when we estimate the population standard deviation). But we want to test whether the two *populations* have the same mean. So we construct a new random variable: the difference between the two sample means.
-
-$$\bar{x}_1 - \bar{x}_2$$
-
-This difference itself has a distribution. The central limit theorem applies to it: if you drew many pairs of samples from the two populations and computed the difference each time, those differences would be normally distributed (or approximately so). The mean of that distribution is $\mu_1 - \mu_2$, the true difference between the population means. The standard deviation of that distribution is the **standard error of the difference**:
+Its standard deviation — the standard error of the difference — is:
 
 $$\text{SE}(\bar{x}_1 - \bar{x}_2) = \sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}$$
 
-This is the key formula. Study it. It says: the variance of a difference is the sum of the variances. If one group is very variable and the other is tight, the difference between them is more variable. If both are small samples, the difference is more variable.
+This formula is worth examining. The variance of a difference of independent random variables is the *sum* of their variances. Group 1 contributes variance $s_1^2 / n_1$ to the difference; Group 2 contributes $s_2^2 / n_2$. They add because the groups are independent — the random fluctuation in one sample's mean is unrelated to the random fluctuation in the other's, and independent sources of uncertainty add.
 
-The test statistic, using the t-distribution (because we estimate the standard deviations from the samples), is:
+Notice that a large, tight sample contributes less uncertainty than a small, variable one. If Group 1 is measured with $n_1 = 1000$ and small variance, its contribution to the standard error is tiny. If Group 2 has $n_2 = 20$ and large variance, it dominates. The formula weights by both sample size and spread.
+
+The test statistic then follows the same logic as Chapter 9. We standardize the observed difference by dividing by its standard error:
 
 $$t = \frac{(\bar{x}_1 - \bar{x}_2) - \delta_0}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}}$$
 
-where $\delta_0$ (delta-nought) is the hypothesized difference between the population means. Usually $\delta_0 = 0$: we're testing whether the two populations have the *same* mean. But $\delta_0$ can be nonzero if the question is whether one population's mean exceeds the other's by a specific amount (e.g., "Is the new machine at least 5% faster?").
+where $\delta_0$ is the hypothesized difference under the null hypothesis — usually zero, because we are testing whether the two populations are equal. This test statistic follows a t-distribution, and we find the p-value by asking how likely it is to observe a $|t|$ this large or larger if the null hypothesis is true.
 
-The degrees of freedom for this test is approximately $n_1 + n_2 - 2$ when both sample sizes are large (30 or more). When sample sizes are smaller or unequal, a more complicated formula applies (the Welch-Satterthwaite equation—see the pantry for details).
+---
 
-### A worked example: Testing whether two manufacturing plants differ
+## A concrete case: two manufacturing plants
 
-Back to the brake pads. 
+A company makes brake pads at two plants. Quality engineers sample 35 pads from the Midwest facility (mean lifespan 49,200 miles, standard deviation 3,100) and 42 pads from the West Coast facility (mean 50,800 miles, standard deviation 2,900). The Midwest pads lasted 1,600 miles less on average. Is the Midwest plant drifting out of specification, or did the sample just happen to catch an off day?
 
-**Setup:** 
-- Midwest (Group 1): $\bar{x}_1 = 49,200$ miles, $s_1 = 3,100$ miles, $n_1 = 35$
-- West Coast (Group 2): $\bar{x}_2 = 50,800$ miles, $s_2 = 2,900$ miles, $n_2 = 42$
-- Hypothesized difference: $\delta_0 = 0$ (we're testing whether they're equal)
-- Significance level: $\alpha = 0.05$
-- This is a two-tailed test: $H_0: \mu_1 = \mu_2$ vs. $H_a: \mu_1 \neq \mu_2$
+<!-- → [TABLE: Worked example setup — two-column table for Midwest vs. West Coast plants, rows: sample size (n), sample mean (x̄), sample standard deviation (s), contribution to SE (s²/n). Last row: observed difference and computed SE. Helps students see the formula populated with real numbers before the arithmetic.] -->
 
-**Step 1: Compute the standard error.**
+The standard error of the difference is:
 
-$$\text{SE} = \sqrt{\frac{(3,100)^2}{35} + \frac{(2,900)^2}{42}} = \sqrt{\frac{9,610,000}{35} + \frac{8,410,000}{42}} = \sqrt{274,571 + 200,238} = \sqrt{474,809} \approx 689 \text{ miles}$$
+$$\text{SE} = \sqrt{\frac{3100^2}{35} + \frac{2900^2}{42}} = \sqrt{274,571 + 200,238} = \sqrt{474,809} \approx 689 \text{ miles}$$
 
-**Step 2: Compute the test statistic.**
+The test statistic:
 
-$$t = \frac{(49,200 - 50,800) - 0}{689} = \frac{-1,600}{689} \approx -2.32$$
+$$t = \frac{(49200 - 50800) - 0}{689} = \frac{-1600}{689} \approx -2.32$$
 
-**Step 3: Find the p-value.**
+With approximately 75 degrees of freedom, a two-tailed p-value for $|t| = 2.32$ is about 0.023. Since $0.023 < 0.05$, we reject the null hypothesis. The Midwest plant's pads are running measurably shorter, and the difference is too large to attribute to sampling luck.
 
-Degrees of freedom: $df = 35 + 42 - 2 = 75$. This is a two-tailed test. We look up $|t| = 2.32$ in the t-distribution with 75 degrees of freedom. The area in both tails at $t = 2.32$ is approximately 0.023.
+What does this conclusion rest on? It rests on the sampling distribution of the difference. If the two plants truly produced identical pads, how often would random sampling generate a 1,600-mile gap between the sample means? About 2.3% of the time. That is unusual enough — given our threshold of 5% — to conclude the plants are genuinely different.
 
-**Step 4: Make a decision.**
+---
 
-Since $p = 0.023 < 0.05$, we reject $H_0$. The Midwest plant's brake pads do last significantly less long, on average, than the West Coast plant's pads. The difference of 1,600 miles is unlikely to be due to chance sampling.
+## Pooled versus unpooled: a choice about assumptions
 
-### Trade-off: Unpooled vs. pooled variance
+The test above used *unpooled* variances — treating the two population standard deviations as potentially different, and letting each sample's variance speak for itself. This is the conservative, safer approach. It is sometimes called the Welch t-test.
 
-I showed you the **unpooled variance** test above, also called the **Aspin-Welch test**. It does not assume the two population standard deviations are equal. It's the safer choice when you don't know whether $\sigma_1 = \sigma_2$.
-
-But sometimes you have prior information suggesting the two population standard deviations are equal—or your data show very similar sample standard deviations, and assuming equality gives you more power (a better chance of detecting a real difference if one exists). In that case, you can use the **pooled variance** approach.
-
-The pooled variance is a weighted average of the two sample variances:
+The alternative is *pooling*: assuming the two populations have the same standard deviation, and combining the two sample variances into a single estimate. The pooled variance is a weighted average:
 
 $$s_p^2 = \frac{(n_1 - 1)s_1^2 + (n_2 - 1)s_2^2}{n_1 + n_2 - 2}$$
 
-The test statistic becomes:
+This gives a slightly simpler test statistic and exactly $n_1 + n_2 - 2$ degrees of freedom, with no approximation needed. When the two population standard deviations are truly equal, pooling is slightly more powerful — it uses the information from both samples more efficiently.
 
-$$t = \frac{(\bar{x}_1 - \bar{x}_2) - \delta_0}}{s_p\sqrt{\frac{1}{n_1} + \frac{1}{n_2}}}$$
+The problem is the assumption. You rarely know in advance whether the two population standard deviations are equal. If you assume they are equal and you are wrong, the pooled test can mislead you. The unpooled approach requires no such assumption and pays only a small cost in power. For this reason, most statisticians now recommend the unpooled approach as the default, reserving pooling for situations where equal variances are strongly supported by prior knowledge or preliminary tests.
 
-The degrees of freedom is exactly $n_1 + n_2 - 2$, with no complicated adjustment.
+<!-- → [TABLE: Side-by-side comparison of pooled vs. unpooled (Welch) t-test — columns: property, pooled, Welch unpooled; rows: assumption required, degrees of freedom formula, when to use, risk if assumption violated, software default. Student should see at a glance why Welch is the safer default.] -->
 
-**When to use pooled:** If a preliminary test (Levene's test, beyond this course) or domain knowledge strongly suggests equal population variances, pooling gives slightly more power. But many statisticians recommend unpooled as the default—it's safer.
-
-**When to use unpooled:** Almost always, unless you have good reason to assume equal variances. The unpooled approach pays a small price in power to avoid the cost of a false assumption.
-
-### Common misconceptions
-
-**"The larger sample size always wins."** Not necessarily. If the larger sample is also much more variable, the standard error can be larger. It's the ratio of variance to sample size in each group that matters.
-
-**"If two sample means look different, the populations must be different."** No. Random sampling can produce differences in sample means even when the populations are identical. The hypothesis test quantifies how surprising the observed difference would be under that assumption.
-
-**"Pooled variance is always better because it gives more power."** Only if the assumption of equal population variances is true. If it's false, pooling can give misleading results. The unpooled approach is more conservative and requires fewer assumptions.
+This is not a religious question. The two tests give similar results when sample sizes are roughly equal and sample variances are similar. They can diverge when one group is much larger or much more variable than the other. In those cases, the unpooled approach is more trustworthy.
 
 ---
 
-## Concept 2: Paired (Matched-Pairs) Samples
+## When the groups are not independent: the paired design
 
-**Cold open: Before and after—a single person's story, twice measured**
+So far we have assumed the two groups are independent — the observations in one group bear no special relationship to any particular observation in the other. But sometimes the design creates natural pairs.
 
-A physical therapist has 12 patients recovering from knee surgery. Before starting a new rehabilitation protocol, each patient performs a standard test: how far can you walk without pain? The result (in meters) is recorded. Then they follow the protocol for six weeks. They perform the same test again. Walk distance after: recorded.
+A physical therapist tests a rehabilitation protocol on twelve patients. She measures how far each patient can walk before the protocol begins, and again after six weeks of treatment. These are not two independent groups. Each patient appears twice — once in the before column and once in the after column. Patient 3's before measurement and Patient 3's after measurement are paired because they belong to the same person.
 
-The data looks like this (before, after):
+The independence assumption is violated. But something better is available.
 
-| Patient | Before | After | Difference |
-|---------|--------|-------|------------|
-| 1       | 150    | 240   | +90        |
-| 2       | 120    | 180   | +60        |
-| 3       | 180    | 200   | +20        |
-| 4       | 100    | 190   | +90        |
-| 5       | 140    | 170   | +30        |
-| 6       | 160    | 260   | +100       |
+For each patient, compute the difference: walking distance after minus walking distance before. Now you have twelve differences — a single sample of numbers representing individual change. The question transforms: is the mean of these differences equal to zero?
 
-And so on for all 12 patients.
-
-This is a **paired** or **matched-pairs** design. Each observation in the "before" group has a natural partner: the same person, measured after. The pairing means the two measurements are not independent—they come from the same subject.
-
-### Why pairing reduces noise: The elegance of one-sample thinking applied to pairs
-
-Here's the key insight: In a paired design, you don't compare two independent groups. Instead, you compute the difference for each pair, and test whether those differences are centered at zero.
-
-For each patient, compute $d_i = \text{after} - \text{before}$. Now you have a single sample of differences: {+90, +60, +20, +90, +30, +100, ...}. Test whether the mean of these differences is zero.
+This is a one-sample t-test, applied to the differences. The test statistic is:
 
 $$t = \frac{\bar{d} - 0}{s_d / \sqrt{n}}$$
 
-where $\bar{d}$ is the mean difference and $s_d$ is the standard deviation of the differences. This is a one-sample t-test applied to the differences. The degrees of freedom is $n - 1$, where $n$ is the number of *pairs*, not observations.
+where $\bar{d}$ is the mean of the twelve differences and $s_d$ is their standard deviation. Degrees of freedom is $n - 1 = 11$, where $n$ is the number of pairs.
 
-Why does pairing help? Because variability *between people* (some people are naturally stronger than others) gets subtracted out. You're looking at the change *within* each person, which is less noisy than comparing "strong people in the after group" to "weak people in the before group."
+Suppose the twelve differences (after minus before, in meters) are: 90, 60, 20, 90, 30, 100, −10, 50, 80, 40, 70, 60. Their mean is $\bar{d} = 760/12 \approx 63.3$ meters. Their standard deviation is approximately 38.2 meters. The standard error is $38.2 / \sqrt{12} \approx 11.0$ meters. The t-statistic is $63.3 / 11.0 \approx 5.75$.
 
-### A worked example: Did the rehabilitation protocol help?
+<!-- → [TABLE: Paired data layout for the rehabilitation example — columns: Patient ID, Before (meters), After (meters), Difference (after − before). Twelve rows of data from the worked example. Final row: mean of differences (63.3 m) and SD of differences (38.2 m). Student should see how the two-column problem collapses to a single column of differences.] -->
 
-Data from the 12 patients. Differences (after − before, in meters):
+With 11 degrees of freedom, a t-statistic of 5.75 gives a p-value far below 0.001. The protocol significantly improved walking distance.
 
-+90, +60, +20, +90, +30, +100, −10, +50, +80, +40, +70, +60
+Why does pairing help? Because people differ enormously from each other. Some patients start stronger, some weaker. If you ignored the pairing — treating the twelve before-measurements and twelve after-measurements as two independent groups — that between-person variability would swamp the signal. One patient who starts at 150 meters and ends at 240 is buried among others who start at 100 or 180. The mean of the after group would be compared to the mean of the before group, and all that individual variation would make the comparison noisy.
 
-**Step 1: Compute the mean difference.**
+By looking only at the *change within each person*, pairing removes the between-person noise entirely. The test becomes sharper. The same true effect produces a larger t-statistic and a smaller p-value when the design exploits pairing.
 
-$$\bar{d} = \frac{90 + 60 + 20 + 90 + 30 + 100 - 10 + 50 + 80 + 40 + 70 + 60}{12} = \frac{760}{12} \approx 63.3 \text{ meters}$$
+<!-- → [DIAGRAM: Two-panel illustration of pairing vs. ignoring pairs — left panel shows two overlapping dot clouds (before group and after group) with wide spread and overlapping distributions, making the difference hard to see; right panel shows the same data reduced to a single column of differences with a narrow distribution clearly separated from zero. Student should see visually why pairing reduces noise.] -->
 
-**Step 2: Compute the standard deviation of the differences.**
-
-Using the sample standard deviation formula on the 12 differences:
-
-$$s_d \approx 38.2 \text{ meters}$$
-
-**Step 3: Compute the standard error and test statistic.**
-
-$$\text{SE}(\bar{d}) = \frac{s_d}{\sqrt{n}} = \frac{38.2}{\sqrt{12}} \approx 11.0 \text{ meters}$$
-
-$$t = \frac{63.3}{11.0} \approx 5.75$$
-
-**Step 4: Find the p-value.**
-
-Degrees of freedom: $df = 12 - 1 = 11$. A t-statistic of 5.75 with 11 degrees of freedom corresponds to a p-value far below 0.001 (essentially, $p < 0.001$).
-
-**Step 5: Make a decision.**
-
-With $p < 0.001 < 0.05$, we reject the null hypothesis that $\mu_d = 0$. The rehabilitation protocol significantly increased walking distance. On average, patients improved by about 63 meters, and this improvement is far too large to be explained by sampling noise.
-
-### When pairing is possible—and when it isn't
-
-**Paired designs work when:**
-- You measure the same person/object before and after treatment.
-- You match subjects in pairs by some criterion (height, baseline health, age) to make them comparable, then randomly assign one to treatment and one to control.
-- You use identical twins or sibling pairs, assigning different treatments to each member.
-- You measure the same location at two points in time.
-
-**Independent samples are necessary when:**
-- The groups are fundamentally different (men vs. women, two different companies, two different manufacturing plants).
-- Subjects cannot be paired (you don't have the same people measured twice, or natural matches).
-
-The paired test is more powerful (better at detecting a real effect) when pairing is possible, because it reduces variability. But you *must* have pairs. If you don't, pairing damages your inference.
-
-### Common misconceptions
-
-**"Paired designs are always better."** Only when the pairing actually reduces noise. If the pairing is arbitrary, you waste information.
-
-**"I can pretend my data are paired if I sort them."** No. Pairing must come from the study design (same person twice, or matched pairs created before you knew the outcomes). Sorting the data and matching arbitrarily introduces bias.
-
-**"The differences have to be positive (improvement) for the test to work."** No. The test is symmetric. Negative differences (the after score is lower) are fine. The question is whether the mean difference is zero, not whether it's positive.
+The flip side: pairing only helps if the pairs are genuinely related. If you sort two unrelated groups by some irrelevant criterion and call them "paired," you impose a structure that does not exist, waste a degree of freedom for every pair, and make your test worse. Pairing is a design feature, not a post-hoc trick.
 
 ---
 
-## Concept 3: Two Proportions
+## Comparing proportions
 
-**Cold open: Two cities, one question about unemployment**
+The same logic extends to proportions. Two cities survey unemployment. City A contacts 400 households and finds 48 where someone is currently seeking work — a sample proportion of 0.12. City B contacts 450 households and finds 45 unemployed — a proportion of 0.10. Is City A's unemployment rate genuinely higher, or is the 2-percentage-point gap within the range of sampling noise?
 
-In May 2024, the unemployment rate in City A (a large Midwestern manufacturing hub) is estimated from a survey. Surveyors randomly contact 400 households. In 48 of them, someone is currently seeking work. Sample proportion: $\hat{p}_A = 48/400 = 0.12$ (12%).
+The null hypothesis is that both cities have the same true unemployment rate, $p_1 = p_2$. Under this null, the best estimate of the common rate is the pooled proportion, combining both samples:
 
-City B (a tech hub on the coast) surveys 450 households. In 45, someone is seeking work. Sample proportion: $\hat{p}_B = 45/450 = 0.10$ (10%).
+$$p_c = \frac{48 + 45}{400 + 450} = \frac{93}{850} \approx 0.109$$
 
-Difference: 12% − 10% = 2 percentage points.
+The standard error of the difference in proportions, under the null:
 
-The question: Is City A's unemployment truly higher, or did this survey just happen to catch slightly more unemployed people in City A by chance?
+$$\text{SE} = \sqrt{p_c(1 - p_c)\!\left(\frac{1}{n_1} + \frac{1}{n_2}\right)} = \sqrt{0.109 \cdot 0.891 \cdot (0.0025 + 0.0022)} \approx 0.0214$$
 
-### The structure of the two-proportion test
+The test statistic:
 
-Like the two-mean case, we construct a test statistic based on the difference of the two sample proportions. The central limit theorem tells us this difference follows an approximately normal distribution.
+$$z = \frac{(0.12 - 0.10) - 0}{0.0214} = \frac{0.02}{0.0214} \approx 0.93$$
 
-The test statistic is:
+This is a z-test rather than a t-test because proportions, unlike means, have a known relationship between variance and mean ($\sigma^2 = np(1-p)$), so there is no free parameter to estimate. A z-statistic of 0.93 gives a two-tailed p-value of about 0.35.
 
-$$Z = \frac{(\hat{p}_1 - \hat{p}_2) - \delta_0}{\sqrt{p_c(1 - p_c)\left(\frac{1}{n_1} + \frac{1}{n_2}\right)}}$$
+$0.35 > 0.05$: fail to reject the null. The 2-percentage-point difference is unremarkable — you would see a gap this large or larger about 35% of the time from pure sampling variation, even if the cities had identical unemployment rates.
 
-where $p_c$ is the **pooled proportion** (combining successes and failures from both samples):
-
-$$p_c = \frac{x_1 + x_2}{n_1 + n_2}$$
-
-$x_1$ and $x_2$ are the number of "successes" (unemployed people, defective items, recovered patients) in each group. $\delta_0$ is usually 0 (testing whether the two population proportions are equal).
-
-Note: This is a *z*-test, not a *t*-test, because proportions are bounded between 0 and 1 and have a known relationship between mean and variance (for a binomial: $\sigma^2 = np(1-p)$).
-
-### A worked example: Are the cities' unemployment rates different?
-
-**Setup:**
-- City A: $\hat{p}_1 = 48/400 = 0.12$, $n_1 = 400$
-- City B: $\hat{p}_2 = 45/450 = 0.10$, $n_2 = 450$
-- Hypothesized difference: $\delta_0 = 0$
-- Significance level: $\alpha = 0.05$
-- Two-tailed test: $H_0: p_1 = p_2$ vs. $H_a: p_1 \neq p_2$
-
-**Step 1: Compute the pooled proportion.**
-
-$$p_c = \frac{48 + 45}{400 + 450} = \frac{93}{850} \approx 0.1094$$
-
-**Step 2: Compute the standard error.**
-
-$$\text{SE} = \sqrt{0.1094 \cdot (1 - 0.1094) \cdot \left(\frac{1}{400} + \frac{1}{450}\right)} = \sqrt{0.1094 \cdot 0.8906 \cdot (0.0025 + 0.00222)}$$
-
-$$= \sqrt{0.0974 \cdot 0.00472} = \sqrt{0.000460} \approx 0.0214$$
-
-**Step 3: Compute the test statistic.**
-
-$$Z = \frac{(0.12 - 0.10) - 0}{0.0214} = \frac{0.02}{0.0214} \approx 0.93$$
-
-**Step 4: Find the p-value.**
-
-A z-statistic of 0.93 in a two-tailed test corresponds to a p-value of approximately 0.35.
-
-**Step 5: Make a decision.**
-
-With $p = 0.35 > 0.05$, we fail to reject $H_0$. The data do not provide sufficient evidence that the two cities' unemployment rates differ. The observed 2-percentage-point difference can reasonably be explained by sampling variation.
-
-### Conditions for the two-proportion test
-
-The two-proportion z-test requires:
-
-1. Both samples are random and independent.
-2. The number of "successes" and "failures" in each sample is at least 5 (some sources say 10). This ensures the normal approximation is accurate.
-
-If either condition is violated, use an exact binomial test or a simulation-based approach (beyond this course).
-
-### Common misconceptions
-
-**"A difference in sample proportions proves a difference in population proportions."** No. Sample proportions vary due to random sampling. The hypothesis test quantifies whether the observed difference is surprising under the null hypothesis.
-
-**"I should use the unpooled version if the sample proportions are very different."** No. The pooled proportion is used for the test under $H_0$ (assuming the populations have the same proportion). Use the unpooled standard error only if you're constructing a confidence interval, where you estimate each population proportion separately.
-
-**"Smaller sample sizes always give larger p-values."** Not necessarily. A smaller sample size increases the standard error, which can increase the p-value. But if the true effect is large, even a small sample can produce a small p-value.
+The pooled proportion appears in the denominator specifically because we are testing the null hypothesis that $p_1 = p_2$. Under that null, both samples are drawing from the same population, and the best estimate of that common proportion combines all the available data. If instead you were constructing a confidence interval for $p_1 - p_2$ — not testing equality but estimating the gap — you would use the unpooled version, treating each sample proportion as an independent estimate.
 
 ---
 
-## Integration: Three Tests, One Logic
+## Statistical significance versus practical importance
 
-The three tests in this chapter—independent means (unpooled and pooled), paired means, and two proportions—follow the same four-step logic from Chapter 9:
+There is a trap that becomes particularly dangerous with two-sample tests, and it is worth naming directly.
 
-1. **State the hypotheses.** $H_0: \text{populations are equal}$ vs. $H_a: \text{populations differ}$ (or one-sided versions).
-2. **Compute the test statistic.** Standardize the observed difference by dividing by its standard error.
-3. **Find the p-value.** Look up the test statistic in the appropriate distribution (t for means, z for proportions).
-4. **Make a decision.** Reject $H_0$ if $p < \alpha$; otherwise, fail to reject.
+A small p-value tells you the observed difference is unlikely to be noise. It does not tell you the difference is important. With large enough samples, you can achieve statistical significance for differences that are trivially small in practice.
 
-The choice of which test to use depends on three questions:
+Consider a drug trial enrolling 10,000 patients per arm. The treatment group shows a mean reduction in systolic blood pressure of 1.2 mmHg; the control group shows 0.9 mmHg. The difference is 0.3 mmHg. With samples this large, the standard error of the difference is tiny, and the t-statistic is enormous. The p-value is essentially zero. But no cardiologist considers a 0.3 mmHg reduction clinically meaningful — it is below the measurement error of most blood pressure cuffs and has no discernible effect on patient outcomes.
 
-- *Are the samples independent or paired?* Paired data use one-sample logic on differences. Independent data use the two-sample machinery.
-- *Are you testing means or proportions?* Means use t-tests (with estimated standard deviation). Proportions use z-tests (with known relationship between mean and variance).
-- *Do you assume equal population variances (for means)?* Unpooled is safer. Pooled gives more power if the assumption holds.
-
-### What p-values actually tell us (and don't tell us)
-
-A p-value of 0.03 means: *If the null hypothesis were true (the two populations are identical), there would be a 3% chance of observing a difference this large or larger, purely by sampling variation.*
-
-It does **not** mean: the alternative hypothesis is 97% likely, or the null hypothesis has a 3% chance of being true, or the effect is practically important.
-
-A small p-value (below $\alpha$, usually 0.05) says the data are surprising under $H_0$. It suggests $H_0$ is unlikely. But it doesn't prove $H_0$ is false—only that the evidence is stronger than we set as our threshold.
-
-### Effect size: Is the difference meaningful?
-
-A statistically significant difference (small p-value) is not the same as a practically meaningful difference. A huge sample can produce a tiny p-value for a trivial effect.
-
-**Cohen's *d*** measures effect size—the magnitude of the difference relative to the standard deviation:
+This is why effect size must accompany every p-value. For two means, the standard measure is **Cohen's d**: the difference between the means divided by the pooled standard deviation.
 
 $$d = \frac{\bar{x}_1 - \bar{x}_2}{s_p}$$
 
-where $s_p$ is the pooled standard deviation.
+Cohen's rough benchmarks: $d = 0.2$ is small, $d = 0.5$ is medium, $d = 0.8$ is large. For the brake pads, the effect size was about $d = 0.53$ — medium, practically meaningful for warranty and customer satisfaction purposes. For the blood pressure drug above, $d$ would be tiny, and no amount of statistical significance changes that.
 
-Cohen's standards: $d = 0.2$ is small, $d = 0.5$ is medium, $d = 0.8$ is large.
+<!-- → [CHART: Scatter plot or dot plot with two axes — x-axis: p-value (log scale, from 0.001 to 1.0), y-axis: Cohen's d (0 to 1.5). Populate four quadrants with labeled example scenarios: top-left (large d, small p) = "significant AND important"; bottom-left (small d, small p) = "significant but trivial — the large-sample trap"; top-right (large d, large p) = "important but underpowered"; bottom-right (small d, large p) = "neither." Student should see that the p-value and effect size are asking different questions.] -->
 
-In the brake pad example, let's compute $d$:
-
-$$s_p = \sqrt{\frac{(35-1)(3,100)^2 + (42-1)(2,900)^2}{35 + 42 - 2}} \approx 3,000$$
-
-$$d = \frac{49,200 - 50,800}{3,000} = \frac{-1,600}{3,000} \approx -0.53$$
-
-A Cohen's $d$ of −0.53 is medium. The Midwest plant's shortfall is not huge, but it's large enough to matter for customer satisfaction and warranty costs.
+The p-value answers: "Could this have happened by chance?" Effect size answers: "Does it matter?" Both questions are worth asking. A result that is statistically significant and practically important is compelling. A result that is statistically significant but practically negligible is technically real and practically useless.
 
 ---
 
-## Exercises
+## Three tests, one structure
 
-### Warm-up exercises
+The three tests in this chapter — independent means, paired means, proportions — look different on the surface but have the same skeleton.
 
-**10.1.** A hospital tests a new blood pressure medication on 40 patients. The control group (standard medication) shows a mean systolic BP of 142 mmHg with $s = 18$. The new medication group shows 138 mmHg with $s = 16$. Is the new medication significantly better at the 0.05 level? (Assume independent samples, unpooled variance.)
+In each case, you identify a quantity that represents the difference between two groups (the difference of sample means, the mean of paired differences, the difference of sample proportions). You compute its standard error. You standardize by dividing the observed difference by the standard error, producing a test statistic. You ask how extreme that test statistic is under the appropriate distribution (t or z). And you compare the resulting p-value to your significance threshold.
 
-**10.2.** Define the difference between independent samples and paired samples. Give an example of each.
+<!-- → [INFOGRAPHIC: Decision tree for choosing among the three two-sample tests — root node: "Are your samples independent or paired?" → paired branch: "Paired t-test (one-sample t on differences)" → independent branch: "Are you comparing means or proportions?" → means branch: "Two-sample t-test (Welch unpooled by default)" → proportions branch: "Two-proportion z-test (pooled SE under H₀)." Each leaf node shows the test statistic formula and the distribution used.] -->
 
-**10.3.** In a two-proportion test, City X surveys 200 residents and finds 30 own electric vehicles. City Y surveys 250 residents and finds 35 own EVs. Compute the pooled proportion.
+The choice of which test to use comes down to three questions. First: are the samples independent or paired? Paired data collapse the problem to a one-sample test on differences. Independent data require the full two-sample machinery. Second: are you comparing means or proportions? Means use the t-distribution; proportions use the z. Third, for means: do you assume equal population variances? Unpooled (Welch) is the safer default.
 
-### Application exercises
+Get those three questions right and you know which formula to use. Get the first one wrong — treating paired data as independent — and your test will be noisier than it needs to be, potentially missing a real effect. The structure is more important than the formulas.
 
-**10.4.** A company compares two customer service training programs. Program A (25 employees) yields a mean satisfaction score of 78 with $s = 8.5$. Program B (28 employees) yields 82 with $s = 7.2$. Test at $\alpha = 0.05$ whether the programs differ. Compute the standard error, the test statistic, and the approximate p-value.
-
-**10.5.** Ten athletes perform a vertical jump test before and after a new strength-training program. The differences (after − before, in inches) are: 2.1, 3.5, 1.2, 4.1, 0.8, 2.9, 3.3, 1.6, 2.4, 3.2. Test at $\alpha = 0.05$ whether the training program significantly improves vertical jump. (Compute $\bar{d}$ and $s_d$, then the test statistic.)
-
-**10.6.** Two manufacturers of smartphone screens report defect rates. Manufacturer A inspects 500 screens and finds 15 defective. Manufacturer B inspects 600 screens and finds 12 defective. Test at $\alpha = 0.05$ whether the defect rates differ.
-
-### Synthesis and challenge
-
-**10.7.** Explain why the standard error of the difference of two means is $\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}$ and not just $\sqrt{\frac{s_1^2 + s_2^2}{2}}$. (Hint: think about what happens when one sample is much larger than the other.)
-
-**10.8.** A study compares weight loss (in pounds) after 12 weeks on diet A (30 people, mean 12 lbs, $s = 4$) vs. diet B (35 people, mean 10 lbs, $s = 5$). 
-- Compute the unpooled test statistic and approximate p-value.
-- Compute Cohen's *d* using the pooled standard deviation.
-- Interpret both results in plain language.
-
----
-
-## Chapter summary
-
-Two-sample hypothesis tests extend the machinery from Chapter 9 to answer comparative questions: Do these two groups differ? The test statistic is built by standardizing the observed difference (in means or proportions) by its standard error.
-
-**Independent means**: Use the t-distribution with the unpooled standard error unless you have strong prior reason to assume equal population variances. Unpooled is the safer default.
-
-**Paired means**: Compute differences for each pair, then apply the one-sample t-test to the differences. This reduces noise from between-subject variability.
-
-**Two proportions**: Use the z-distribution with the pooled proportion in the standard error formula.
-
-In all cases, the p-value answers the same question: *If the null hypothesis (populations are equal) were true, how surprising would this observed difference be?* A small p-value suggests the null hypothesis is unlikely. But always pair the p-value with an effect size (Cohen's *d* for means) to know whether the difference is not just statistically significant, but practically meaningful.
-
----
-
-## Connections forward
-
-Chapter 11 generalizes the two-sample t-test to many groups (ANOVA), which tests whether three or more population means are equal. Chapter 12 extends the chi-square test to two-way tables, comparing proportions across multiple categories. Regression (Chapter 13) tests whether a predictor's coefficient is nonzero, using a two-sample test on the coefficient itself.
-
----
-
-## What would change my mind
-
-If a chapter on Bayesian two-sample inference were added (treating both the null and alternative hypotheses as probability distributions, updating based on data), I would need to revisit how the p-value and effect size relate to posterior probability and credible intervals.
-
-## Still puzzling
-
-I don't fully understand why many textbooks present the pooled-variance test first as "the standard method," when the unpooled (Welch) approach is more robust and doesn't require an assumption about equal population variances. The historical answer involves power: when variances truly are equal, pooling is slightly more powerful. But in practice, when we don't know the variances, this seems a small gain for a fragile assumption.
-
----
-
-## Tags
-
-two-sample hypothesis testing, independent samples, paired samples, t-test, z-test, standard error, effect size, Cohen's d, pooled variance, clinical trials, comparative inference
+What you are ultimately doing in every case is the same thing. You are asking: given a world where these two populations are identical, how surprised should I be by the difference I actually observed? If the answer is "very surprised" — if the p-value is small — you have evidence that the world is not one where the populations are identical. If the answer is "not particularly surprised," the data are consistent with the null, and you have not found a difference worth reporting.
 
 ---
 
 ## LLM Exercise — Chapter 10: Hypothesis Testing with Two Samples (Analyze One Dataset Project)
 
-**Project:** Analyze One Real Dataset.
-**What you're building this chapter:** a two-sample comparison test.
+**Project:** Analyze One Real Dataset.  
+**What you're building this chapter:** a two-sample comparison test.  
 **Tool:** **Claude Code** + **Claude Project**.
 
 ---
@@ -483,7 +237,7 @@ dataset's central story?
 
 ---
 
-**What this produces:** A 500-800 word section with a complete two-sample test + effect size + interpretation. The effect-size discipline is what distinguishes useful inference from p-value-hunting.
+**What this produces:** A 500–800 word section with a complete two-sample test + effect size + interpretation. The effect-size discipline is what distinguishes useful inference from p-value-hunting.
 
 **How to adapt this prompt:**
 
@@ -496,17 +250,19 @@ dataset's central story?
 
 **Preview of next chapter:** Chapter 11 covers chi-square tests for categorical relationships. You'll formally test independence between two categorical variables in your dataset (extending Ch 3's contingency-table work).
 
-
 ---
 
 ## 🕰️ AI Wayback Machine
 
-**Frank Wilcoxon** was chemist whose rank-based two-sample test (1945) became one of the most-used nonparametric techniques in modern statistics.
+**Frank Wilcoxon** was a chemist whose rank-based two-sample test (1945) became one of the most-used nonparametric techniques in modern statistics.
 
 **Run this:**
 
 ```
-Who is Frank Wilcoxon, and how does their work connect to two-sample tests we covered in this chapter? Keep it to three paragraphs. End with the single most surprising thing about their career or ideas.
+Who is Frank Wilcoxon, and how does their work connect to
+two-sample tests we covered in this chapter? Keep it to three
+paragraphs. End with the single most surprising thing about their
+career or ideas.
 ```
 
 → Search **"Frank Wilcoxon"** on Wikipedia.
