@@ -1,469 +1,262 @@
 # Chapter 13 — Linear Regression and Correlation
-
-## Three title options
-
-1. **The Line That Explains: From scatter to prediction, why regression lets us see what one variable tells us about another**
-2. **When Two Things Move Together: Correlation, causation, and the mechanics of the least-squares line**
-3. **Explaining the Scatter: How regression isolates signal from noise, and why the line never tells the whole story**
+*On what it means for two things to move together, and what it doesn't mean.*
 
 ---
 
-## TL;DR
+Francis Galton was an obsessive measurer. In the 1870s, he grew sweet pea plants, recorded the sizes of their seeds, then collected seeds from the tallest plants and from the shortest plants and grew a new generation. He measured the offspring. And something strange happened: the children of the tallest plants were, on average, shorter than their parents. The children of the shortest plants were, on average, taller.
 
-When two variables move together, correlation measures how tightly they move together in a linear pattern. Regression goes further: it finds the line that minimizes squared distances from the data, giving you the best prediction of one variable from the other. But here is the essential warning: the line is only as good as your data, and correlation is never proof of cause. The chapter that closes this book shows you the machinery of association—the mathematics that lets you quantify what you're seeing—and names where the machinery breaks down.
+The offspring did not match the parents. They moved back toward the middle.
 
----
+Galton called this regression — regression to the mean. The word stuck, and we now use it for the entire machinery of fitting lines to data. But the underlying phenomenon is worth sitting with before we touch a formula. Sons of very tall fathers are tall, but not as tall as their fathers. A company that dominates its market one year does not dominate quite as thoroughly the next. A student who scores exceptionally high on one exam does not score quite as high on the next.
 
-## Cold open: The moment Galton planted his peas
+This is not a flaw. It is not noise. It is a real property of the world. The extreme value was partly skill, partly luck. Luck doesn't repeat reliably. Each time you measure an extreme, some of the extremeness evaporates.
 
-Francis Galton was an obsessive measurer. In the 1870s, he grew sweet pea plants, measured their seeds, recorded everything. Then he collected seeds from his tallest plants and from his shortest plants and planted them in a new generation. He measured those seeds. And something strange happened: the tall plants' seeds produced plants that were, on average, shorter than their parents. The short plants' seeds produced plants that were, on average, taller than their parents.
+Galton's deeper insight: if two variables are related — heights of parents and children, exam scores in two semesters, drug dose and response — you can draw a line through the scatter, and that line is not arbitrary. It is the line that best predicts one variable from the other. And because it is a prediction, it already incorporates regression to the mean. It moves you from the observed extreme toward the average by exactly the right amount.
 
-The offspring did not match the parents. Instead, they regressed—they moved back toward the average.
-
-Galton did not understand the mechanism at first. He called it regression. The word stuck. Regression to the mean. His children moving backward from their parents' extremes toward the middle. And we now use the same word—regression—for the statistical machinery that lets us see that movement.
-
-The phenomenon is everywhere. Sons of very tall fathers are tall, but not as tall as their fathers. Daughters of very short mothers are short, but not as short. A student who scores exceptionally high on one exam does not score quite as high on the next. A company that dominates one year does not dominate quite as thoroughly the next.
-
-This is not a flaw in the data. It is not a failure of inheritance. It is a real property of the world: extremes tend to moderate when measured again. Regression to the mean happens because the extreme value was partly luck, partly skill. Luck does not usually repeat.
-
-But Galton's insight goes deeper. If two variables move together—heights of parents and heights of children, exam scores in one semester and the next, one measure of a company's performance and another—then we can draw a line through that scatter. And that line is not random. It obeys a rule. It minimizes something precise. It tells you what the second variable is most likely to be given what you know about the first.
-
-This chapter teaches you that line and why it works. More importantly, it teaches you what it cannot do.
-
-### Learning objectives
-
-By the end of this chapter you will be able to:
-
-- **Recognize** when two variables are correlated and **measure** the strength of a linear relationship with *r*, the correlation coefficient.
-- **Interpret** the sign and magnitude of *r*, and **distinguish** correlation from causation.
-- **Derive** and **calculate** the least-squares regression line, understanding slope and intercept as measures of association, not proof of effect.
-- **Compute** residuals, interpret their meaning, and **diagnose** whether a linear model fits the data.
-- **Explain** $r^2$, the coefficient of determination, as the proportion of variance explained.
-- **Make predictions** using a regression line and **recognize** when a prediction is extrapolation and therefore unreliable.
-
-### Prerequisites
-
-Understanding of means and standard deviations from Chapter 2. Comfort with the coordinate plane. Willingness to distinguish between "moving together" and "one causing the other."
-
-### Why this chapter matters
-
-Regression is the statistical machinery that lets you quantify association. It is everywhere: predicting house prices from square footage, estimating earnings from education level, modeling how drug dose affects patient response. The strength of regression is that it gives you a line—a single number that summarizes how much one variable changes as the other increases.
-
-But regression is also where students most often go wrong. Because you can always draw a line through data does not mean the line is causal. Because the line fits the data you have does not mean it will fit new data. Because you can make a prediction does not mean the prediction is accurate. This chapter shows you how the line works. More importantly, it shows you what the line cannot show.
+That is what this chapter is about — how to find that line, what it tells you, and what it cannot tell you.
 
 ---
 
-## Concept 1 — Seeing co-movement: Scatter plots and the correlation coefficient
+## Seeing co-movement
 
-**Cold open: Two students, two test scores**
+Before you can fit a line, you need to see whether there's something to fit. The tool is a scatter plot. Put one variable on the horizontal axis, the other on the vertical axis, and plot each observation as a point.
 
-Sarah scores 72 on the midterm. She scores 68 on the final.
+If the cloud of points tilts from lower left to upper right — high values on one axis tend to go with high values on the other — the variables are positively associated. If the cloud tilts from upper left to lower right, they're negatively associated. If the cloud is a shapeless blob, there's no linear relationship.
 
-Marcus scores 85 on the midterm. He scores 88 on the final.
+The scatter plot gives you the direction and a rough sense of strength. To quantify strength, you compute $r$, the correlation coefficient.
 
-Keisha scores 91 on the midterm. She scores 94 on the final.
+$$r = \frac{\sum (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum (x_i - \bar{x})^2 \sum (y_i - \bar{y})^2}}$$
 
-What pattern do you see?
+The formula looks dense but the idea is clean. For each data point, you measure how far $x$ is from its mean and how far $y$ is from its mean, then multiply those two distances. If both are above their means, the product is positive. If one is above and one is below, the product is negative. If they consistently go the same direction, the products are consistently positive and sum to something large. If they consistently go opposite directions, the sum is large and negative. If there's no pattern, positive and negative products cancel and the sum is near zero.
 
-The students who scored higher on the midterm also scored higher on the final. The scores move together. If someone tells you a student's midterm score, you can make a reasonable guess about their final score. Not a perfect guess. But reasonable.
+The denominator is a scaling factor — it ensures $r$ always falls between $-1$ and $1$ regardless of the units of measurement.
 
-Now imagine instead: Sarah scores 72 on the midterm and 88 on the final. Marcus scores 85 on the midterm and 70 on the final. Keisha scores 91 on the midterm and 60 on the final. The relationship reverses. Higher midterm scores predict lower final scores. They move together, but in opposite directions.
+$r = 1$: perfect positive linear relationship, every point on a line tilting upward.
+$r = -1$: perfect negative linear relationship, every point on a line tilting downward.
+$r = 0$: no linear relationship; the cloud is a blob.
+$r = 0.8$: strong positive association, points cluster tightly around an upward slope.
+$r = 0.3$: weak positive association, a slight upward tendency lost in wide scatter.
 
-Or imagine they do not move together at all: Sarah scores 72 on the midterm and 85 on the final. Marcus scores 85 on the midterm and 60 on the final. Keisha scores 91 on the midterm and 89 on the final. There is no pattern. You cannot predict one from the other.
+<!-- → [IMAGE: five scatter plots arranged in a row — from left to right: r=-1 (tight downward line), r=-0.7 (loose downward cloud), r=0 (shapeless blob), r=0.7 (loose upward cloud), r=1 (tight upward line); each labeled with its r value; same scale and point count in each; student sees at a glance how point-cloud tightness and tilt correspond to magnitude and sign of r] -->
 
-To see this pattern visually, we plot the data as a scatter plot. The midterm score goes on the horizontal axis. The final score goes on the vertical axis. Each student is one point. If the points form a cloud that tilts upward from lower left to upper right, the variables move together positively. If the cloud tilts downward, they move together negatively. If the cloud is a shapeless blob, there is no linear relationship.
+One thing to watch: $r$ measures *linear* association. Two variables could be perfectly related in a curved way and still have $r$ near zero. A correlation of zero does not mean the variables are independent; it means there's no linear pattern. Always look at the scatter plot before trusting the number.
 
-The scatter plot tells you the shape. But we need a number to measure strength. That number is *r*, the correlation coefficient.
+We often report $r^2$ instead of $r$. It has a cleaner interpretation: $r^2$ is the proportion of the variation in $y$ that is explained by $x$ through the linear relationship. If $r = 0.9$, then $r^2 = 0.81$, meaning 81% of the variation in $y$ is accounted for by the linear association with $x$. The remaining 19% is explained by something else — or by nothing measurable at all.
 
-### The correlation coefficient: Measuring co-movement
-
-*Correlation*, from Latin *com* (together) and *relatio* (relation), measures how two variables move together. The correlation coefficient *r* ranges from −1 to 1. The sign tells you the direction. The magnitude tells you the strength.
-
-When *r* = 1, every data point lies exactly on an upward-sloping line. Perfect positive correlation.
-
-When *r* = −1, every data point lies exactly on a downward-sloping line. Perfect negative correlation.
-
-When *r* = 0, there is no linear relationship. The points form a shapeless cloud.
-
-When *r* = 0.8, the points cluster fairly tightly around an upward slope, but with scatter. Strong positive correlation.
-
-When *r* = 0.3, the points show a weak upward trend, but the scatter is wide. Weak positive correlation.
-
-The formula for *r* is:
-
-$$r = \frac{\sum\left( x_{i} - \bar{x} \right)\left( y_{i} - \bar{y} \right)}{\sqrt{\sum\left( x_{i} - \bar{x} \right)^{2} \sum\left( y_{i} - \bar{y} \right)^{2}}}$$
-
-This looks intimidating. But here is what it means: You take how far each *x* value is from the mean of *x*. You take how far each *y* value is from the mean of *y*. You multiply those distances. If both are above their means, the product is positive. If one is above and one is below, the product is negative. You add all those products. That is the numerator.
-
-The denominator is the square root of the product of all the squared deviations. It is a scaling factor. It ensures that *r* stays between −1 and 1, regardless of the units you measure in.
-
-In practice, you will never calculate *r* by hand for real data. The arithmetic is tedious for even a dozen data points. Software does it. But the idea is simple: *r* measures how much *x* and *y* move together, scaled so that perfect co-movement is 1, perfect opposition is −1, and no relationship is 0.
-
-### A worked example — interpreting the correlation coefficient
-
-The Bureau of Labor Statistics measures education level and median weekly earnings for workers in the United States. Let's say we have data for 30 occupation groups: high school graduate, associate degree, bachelor's degree, advanced degree, and everything in between, measured in years.
-
-We collect two variables: *x* = years of education, *y* = median weekly earnings in dollars.
-
-High school (12 years): $850
-Associate degree (14 years): $1,050
-Bachelor's degree (16 years): $1,400
-Advanced degree (18+ years): $1,650
-
-We plot these. The scatter goes upward, left to right. We calculate *r* = 0.92.
-
-What does this mean?
-
-*r* = 0.92 tells us: education and earnings move together very strongly. The points cluster tightly around an upward line. If you know someone's education level, you can predict their earnings with reasonable confidence.
-
-But *r* = 0.92 does not mean: more education causes higher earnings. It means: education and earnings are associated. They move together. Causation is a different claim. Education could cause earnings to rise (employers pay more for educated workers). Earnings could cause education (people with higher earnings invest more in education). A third variable could cause both (cognitive ability drives both educational attainment and earning potential, regardless of the diploma).
-
-Correlation is direction and strength of co-movement. Causation is one variable changing the other. Do not confuse them.
-
-### Trade-off: $r$ vs. $r^2$
-
-*r* = 0.9 sounds strong. And it is. But it is stronger than *r^2* = 0.81, which says: 81% of the variation in earnings can be explained by education level. That means 19% is explained by something else. 19% is a lot. It is the difference between a prediction being correct and being off by several hundred dollars.
-
-We often report $r^2$ instead of *r* because $r^2$ has a clear interpretation: it is the proportion of variance explained. But we calculate *r* first, because *r* has the direction (positive or negative) and because squaring a correlation always loses information. When you see *r* = 0.7, remember that $r^2$ = 0.49. Nearly half the variation is unexplained.
-
-### Common misconceptions
-
-**"Correlation of 0.9 means 90% of the variance is explained."** No. *r* = 0.9 means $r^2$ = 0.81, so 81% is explained. The correspondence is squared, not linear.
-
-**"If *r* is close to zero, there is no relationship."** There is no *linear* relationship. The two variables could be perfectly related in some nonlinear way. A correlation of zero means the scatter shows no tilted cloud, but it does not mean the variables are independent. Plot the data. See the shape. Correlation measures only straightness.
-
-**"Correlation of 0.5 with a big sample is meaningless."** No. A correlation of 0.5 with 1,000 data points is statistically significant. It is a real, measurable association, even if half the variation is unexplained. "Statistically significant" means it is not due to random chance. "Practically significant" means it is large enough to matter for your application. Do not mix those up.
+A critical point about $r$ and causation: the correlation coefficient is a number that measures co-movement. It is not a number that measures cause. If education and earnings are correlated with $r = 0.92$, that is not evidence that education causes high earnings. The two variables move together. Why they move together is a separate question, and $r$ contributes nothing to answering it.
 
 ---
 
-## Concept 2 — The regression line: Finding the line that best fits the scatter
+## The line that fits best
 
-**Cold open: A drug trial, dose and response**
+Now suppose the scatter plot shows a reasonable linear pattern. You want to draw a line — not just any line, but the one that best summarizes the data. What does "best" mean?
 
-A pharmaceutical company is testing a new pain reliever. They give patients doses of 50 mg, 75 mg, 100 mg, 125 mg, and 150 mg. For each dose, they measure pain relief on a 0-100 scale.
+The answer: best means it minimizes the squared prediction errors.
 
-50 mg: 18 points of relief
-75 mg: 32 points
-100 mg: 42 points
-125 mg: 55 points
-150 mg: 68 points
+For every data point, you can measure the residual — the vertical distance between the actual $y$ value and what the line predicts at that $x$ value:
 
-The researchers plot the data. The points do not form a perfect line. But they cluster around an upward trend. If you had to draw one line that best represented that trend, where would you draw it?
+$$e_i = y_i - \hat{y}_i$$
 
-This is not a casual question. There are infinitely many lines that pass through or near those five points. Each line gives a different prediction for the relief you would get from, say, 110 mg. How do you choose?
+The residual is what the line misses. If the point is above the line, the residual is positive. Below the line, negative. If you just added up all residuals, positive and negative would cancel out — for any line that passes through the mean of the data, the residuals sum to zero exactly. That's useless for measuring total error.
 
-The answer: You choose the line that minimizes something. The least-squares regression line minimizes the sum of squared residuals. Every point has a residual—the difference between the actual value and the value predicted by the line.
+So instead you square each residual and add those squares. The sum of squared errors, SSE, is a measure of total miss. The least-squares regression line is the unique line that minimizes SSE.
 
-*Residual*, from Latin *residuum* meaning what is left over, is what the line does not explain.
-
-For the drug trial, suppose the line is *y* = 10 + 0.45*x*.
-
-At dose 100 mg, the actual relief is 42. The line predicts: 10 + 0.45(100) = 55. The residual is 42 − 55 = −13.
-
-The point is below the line. The line overestimated.
-
-At dose 50 mg, the actual relief is 18. The line predicts: 10 + 0.45(50) = 32.5. The residual is 18 − 32.5 = −14.5.
-
-Again below the line.
-
-The residuals are the vertical distances from each point to the line. Some are positive (point above), some negative (point below). If you just add them, positive and negative cancel. So instead, you square each residual. Sum those squares. That is the Sum of Squared Errors, or SSE.
-
-The least-squares line is the line that minimizes SSE. It is the line where the squared distances from all the points to the line are as small as possible, on average.
-
-Why squares instead of absolute values? Because the calculus works out cleanly. Minimizing the sum of squared errors has a closed-form solution. You do not need to search or approximate. You can calculate the best-fit line directly.
-
-### Deriving the regression line
+Why square rather than take absolute values? Because the calculus is clean. The minimum of a sum of squared terms has a closed-form solution. You don't have to search for it numerically — you can derive it directly.
 
 The equation of the regression line is:
 
-$$\hat{y} = b_{0} + b_{1}x$$
+$$\hat{y} = b_0 + b_1 x$$
 
-where *b*<sub>0</sub> is the intercept (where the line crosses the *y*-axis when *x* = 0) and *b*<sub>1</sub> is the slope (the change in *y* for each unit increase in *x*).
+where $b_1$ is the slope and $b_0$ is the intercept. These come from minimizing SSE, and they work out to:
 
-The slopes and intercept are:
+$$b_1 = r \cdot \frac{s_y}{s_x}$$
 
-$$b_{1} = r \left( \frac{s_{y}}{s_{x}} \right)$$
+$$b_0 = \bar{y} - b_1 \bar{x}$$
 
-$$b_{0} = \bar{y} - b_{1}\bar{x}$$
+Look at the slope formula. It says the slope is the correlation scaled by the ratio of standard deviations. This connection between $r$ and the regression line is not a coincidence — it is the machinery that links the two ideas.
 
-Look at the slope formula. It says: the slope is the correlation *r*, scaled by the ratio of standard deviations.
+If $r = 0$, the slope is zero — the line is horizontal, and $x$ predicts nothing. If $r = 1$, the slope is the ratio of standard deviations — maximum responsiveness, every unit change in $x$ predicts a unit change measured in the units of $y$. The standard deviations convert $r$ from a dimensionless number into a concrete slope with the right units.
 
-This is not a coincidence. It connects correlation and regression. If *r* = 0 (no correlation), the slope is 0 (horizontal line; no change). If *r* = 1 (perfect positive correlation), the slope is the ratio of standard deviations (maximum responsiveness). If *r* = −1 (perfect negative correlation), the slope is the negative of that ratio.
+The intercept formula says the line passes through the point $(\bar{x}, \bar{y})$ — the means of both variables. This is always true for the least-squares line. If you know the slope and you know the means, the line is determined.
 
-The scaling by standard deviations matters. If *y* is measured in dollars and *x* in years, the slope is in dollars per year. If *y* is in cents and *x* in months, the slope is in cents per month. The standard deviations convert *r* from an abstract correlation into a concrete slope with units.
+<!-- → [IMAGE: scatter plot of ~20 points with the least-squares line drawn through them; a bold dot marks the point (x̄, ȳ) labeled "the line always passes through the means"; a vertical dashed line from one data point to the regression line labeled "residual eᵢ = yᵢ − ŷᵢ"; arrows show two residuals, one positive (point above line) and one negative (point below line); helps students see how the line and residuals relate geometrically before computing] -->
 
-The intercept formula says: the line passes through the point (*x̄*, *ȳ*), the means of both variables. If you know the slope and the means, you know where the line crosses the *y*-axis.
+Let me work through this fully. A statistics class has 25 students.
 
-### A worked example — predicting final exam score from midterm score
+- Mean midterm: $\bar{x} = 74$
+- Mean final: $\bar{y} = 76$
+- Standard deviation of midterm: $s_x = 10$
+- Standard deviation of final: $s_y = 11$
+- Correlation: $r = 0.85$
 
-A statistics class has 25 students. The midterm is out of 100. The final is out of 100. Here are the results:
+Slope:
 
-Mean midterm: 74
-Mean final: 76
-Standard deviation of midterm: 10
-Standard deviation of final: 11
-Correlation: *r* = 0.85
+$$b_1 = 0.85 \times \frac{11}{10} = 0.85 \times 1.1 = 0.935$$
 
-Calculate the regression line. Predict the final exam score for a student who scores 85 on the midterm.
+Intercept:
 
-**Step 1: Calculate the slope.**
+$$b_0 = 76 - 0.935 \times 74 = 76 - 69.19 = 6.81$$
 
-$$b_{1} = 0.85 \times \frac{11}{10} = 0.85 \times 1.1 = 0.935$$
+Regression line: $\hat{y} = 6.81 + 0.935x$.
 
-For each point increase on the midterm, the final is predicted to increase by 0.935 points.
-
-**Step 2: Calculate the intercept.**
-
-$$b_{0} = 76 - 0.935 \times 74 = 76 - 69.19 = 6.81$$
-
-**Step 3: Write the equation.**
-
-$$\hat{y} = 6.81 + 0.935x$$
-
-**Step 4: Predict for a student with midterm score 85.**
+Prediction for a student who scored 85 on the midterm:
 
 $$\hat{y} = 6.81 + 0.935 \times 85 = 6.81 + 79.48 = 86.29$$
 
-The predicted final exam score is 86.29, or approximately 86.
+The predicted final exam score is about 86.
 
-Notice: The student's midterm score of 85 is 11 points above the mean of 74. But the predicted final score of 86.29 is only 10.29 points above the mean final of 76. The prediction regresses toward the mean. This is Galton's insight again. You do not expect the same deviation on the final as on the midterm. You expect some regression back toward the middle. The regression line captures exactly that amount of regression.
+Now here is Galton's regression in the numbers. The student scored 85 on the midterm — 11 points above the mean of 74. But the predicted final score of 86.29 is only 10.29 points above the mean final of 76. The prediction regresses toward the mean. You do not predict the same distance above average on the final as they showed on the midterm. You predict somewhat less, because part of the midterm advantage was likely luck, and luck is not reliably repeated.
 
----
+The regression line encodes exactly this. The slope is 0.935, not 1.0. Every unit deviation from the mean on the midterm corresponds to only 0.935 units of predicted deviation on the final. That fraction is $r \cdot (s_y / s_x) = 0.85 \times 1.1 = 0.935$. The correlation determines how much regression toward the mean the line predicts.
 
-## Concept 3 — Diagnosing fit: Residuals, $r^2$, and the limits of the line
-
-**Cold open: The perfect line and the cloud of points**
-
-Imagine two scatter plots side by side.
-
-Plot A: 50 data points scattered so tightly around a line that you can barely see the scatter. The line is doing almost all the explaining.
-
-Plot B: 50 data points scattered in a wide cloud. The line passes through the middle, but most points are far from it. The line is doing some explaining, but there is a lot left over.
-
-Both plots could have the same correlation. (In fact, correlation does not depend on the sample size. *r* = 0.8 with 50 points means the same thing as *r* = 0.8 with 500 points.) But the scatter around the line tells a different story.
-
-This is where residuals and $r^2$ come in.
-
-### Residuals: What the line misses
-
-For every data point, the residual is:
-
-$$e_{i} = y_{i} - \hat{y}_{i}$$
-
-The actual value minus the predicted value.
-
-If the residual is zero, the point lies exactly on the line.
-
-If the residual is positive, the actual value is above the line.
-
-If the residual is negative, the actual value is below the line.
-
-A scatter plot of residuals is diagnostically valuable. Plot the fitted values (*ŷ*) on the horizontal axis and the residuals on the vertical axis.
-
-If the line is a good fit, the residual plot should show:
-- Points scattered randomly above and below zero with no pattern.
-- No outliers far from the line.
-- Roughly equal spread above and below across all values of *x*.
-
-If the residual plot shows:
-- A curved pattern (points below the line at the edges, above in the middle, or vice versa), the relationship is not linear. A straight line is the wrong model.
-- Outliers far from zero, some data points are very poorly predicted. Investigate them.
-- The spread increasing as *x* increases (a fan shape), the variance is not constant. Predictions are less reliable at high values of *x* than at low values.
-
-A residual plot tells you whether your model assumptions hold. The regression line assumes a linear relationship with constant variance and normally distributed errors. If the residual plot violates those assumptions, the line is less trustworthy.
-
-### $r^2$: The proportion of variance explained
-
-We have already seen $r^2$ in Concept 1. Now we derive it from the residuals.
-
-The total variation in *y* is measured by the sum of squared deviations from the mean:
-
-$$\text{SS}_\text{total} = \sum (y_{i} - \bar{y})^{2}$$
-
-The variation not explained by the line is the sum of squared residuals:
-
-$$\text{SS}_\text{error} = \sum (y_{i} - \hat{y}_{i})^{2}$$
-
-The variation explained by the line is:
-
-$$\text{SS}_\text{regression} = \text{SS}_\text{total} - \text{SS}_\text{error}$$
-
-The coefficient of determination is:
-
-$$R^{2} = \frac{\text{SS}_\text{regression}}{\text{SS}_\text{total}} = 1 - \frac{\text{SS}_\text{error}}{\text{SS}_\text{total}}$$
-
-This is the proportion of the total variation in *y* that is explained by *x* through the regression line.
-
-$R^{2}$ = 0: The line explains none of the variation. It is just the horizontal line at the mean.
-
-$R^{2}$ = 0.5: The line explains half the variation.
-
-$R^{2}$ = 0.95: The line explains 95% of the variation. Only 5% is left as residual error.
-
-For simple linear regression (one predictor), $R^{2} = r^{2}$.
-
-### A worked example — examining residuals and $r^2$
-
-Return to the exam data. We fit the line $\hat{y} = 6.81 + 0.935x$ with *r* = 0.85.
-
-Calculate $R^{2}$:
-
-$$R^{2} = r^{2} = 0.85^{2} = 0.7225$$
-
-The regression line explains 72.25% of the variation in final exam scores. That means 27.75% is explained by other factors: how much students studied, whether they were well-rested, their underlying ability, luck, or plain measurement error.
-
-27.75% is substantial. If you were using this line to predict final scores for placement or advising, you would want to know that a quarter of the variation is beyond the model. The line is useful. But it is not the whole story.
-
-Now suppose we examine the residuals. Most students' actual final scores are within 5 points of the prediction. Three students are off by more than 10 points. Two of them scored much higher than predicted (strong final, weak midterm—perhaps they studied hard between exams). One scored much lower than predicted (weak final despite a decent midterm—perhaps they were ill on exam day, or did not study).
-
-These outliers are valuable information. They tell us the model works well for most students but sometimes fails to capture what drives some students' performance. If you were advising a student, you would not just tell them "your predicted final is 86." You would ask: Is there something unusual going on? Are you studying more than your midterm score suggests? Less? Is your test anxiety getting better or worse?
-
-The line is a summary. The residuals are the details that the summary misses.
-
-### Trade-off: Fit vs. complexity
-
-The more variables you add to a regression model, the higher $R^{2}$ gets. You could add midterm grade, GPA, hours studied, sleep quality, test anxiety, and family income. The $R^{2}$ would climb. The predictions would be more accurate.
-
-But here is the cost: the more parameters you estimate, the more your model is fitting the specific data you have rather than learning a general pattern. This is called overfitting. A model with too many parameters predicts your current data well but predicts new data poorly.
-
-This is why we often prefer simpler models even if they have lower $R^{2}$. A line with $R^{2}$ = 0.7 is sometimes better than a complex curve with $R^{2}$ = 0.92. The line is easier to understand, easier to communicate, and more likely to predict new observations correctly.
-
-### Common misconceptions
-
-**"A high $r^2$ means the model is good."** It depends on the application. For predicting house prices from square footage, $R^{2}$ = 0.6 might be excellent (lots of factors affect price beyond size). For predicting a physical constant in a physics experiment, $R^{2}$ = 0.6 might be worryingly low (you expect a tighter relationship).
-
-**"If *r* is not significant, the line is useless."** Statistical significance is about whether the correlation is reliably different from zero. Practical significance is about whether the size of the effect matters. A very small correlation can be statistically significant with a huge sample but still too small to be useful for prediction.
-
-**"Residuals should be normally distributed."** This is one of the regression assumptions. But if the residuals are approximately normal, the inferences (confidence intervals, hypothesis tests) are valid. If they are badly non-normal (heavily skewed, extreme outliers), the tests are less reliable. A residual plot will show this.
+<!-- → [IMAGE: scatter plot of exam data with regression line ŷ = 6.81 + 0.935x; horizontal dashed line at ȳ=76 and vertical dashed line at x̄=74; a single point at (85, actual final) with a vertical bracket showing its distance above the mean final; a second bracket on the x-axis showing the 11-point deviation from the mean midterm; caption: "The deviation shrinks from 11 points above midterm mean to only 10.29 points above final mean — regression to the mean in action"] -->
 
 ---
 
-## Integration and synthesis — When correlation breaks down, and why the line is not cause
+## What the line misses: Residuals and $r^2$
 
-Here is the moment to step back and name what regression cannot do.
+The regression line summarizes the relationship. The residuals tell you what the summary misses.
 
-Regression finds the line that best fits the scatter. It quantifies how tightly the variables move together. It lets you predict one variable from the other. But it does not tell you why they move together.
+Plot the residuals. Put the fitted values $\hat{y}$ on the horizontal axis and the residuals $e_i$ on the vertical axis. If the line is a good model, the residual plot should look like a random scatter around zero — no pattern, no trend, roughly equal spread above and below across the whole range.
 
-Two variables can be correlated for three reasons:
+If the residual plot shows a curve — points below the line at the extremes and above it in the middle, say — the relationship between $x$ and $y$ is not linear. You've fit a straight line to a bent relationship. The line is the wrong model.
 
-1. **X causes Y.** More education leads to higher earnings (education causes earning power).
+If the residual plot fans out — small residuals for small $\hat{y}$, large residuals for large $\hat{y}$ — the spread of the data is not constant across the range of $x$. Your predictions are more reliable in some ranges than others.
 
-2. **Y causes X.** Higher earnings lead to more investment in education (wealth enables education). Or: pain relief causes patients to increase their dose (response drives dose adjustment).
+If there are a few points with very large residuals, those are worth investigating. They are observations where the model fails substantially. Sometimes they're errors. Sometimes they're the most interesting cases in the dataset — the student who studied brilliantly after a poor midterm, the year a company had an anomalous result.
 
-3. **A third variable causes both.** Cognitive ability causes both higher education and higher earnings. Time of day causes both coffee consumption and traffic accidents.
+<!-- → [IMAGE: three residual plots in a row, each showing fitted values on the horizontal axis and residuals on the vertical axis — (1) random scatter around zero labeled "Good fit: assumptions met"; (2) curved pattern (U-shape) labeled "Nonlinearity: wrong model"; (3) fan shape widening to the right labeled "Heteroscedasticity: unequal variance"; each plot annotated with what the student should do in response] -->
 
-These three situations produce different scatter plots. They produce different correlations. But regression produces the same line for each. The line is agnostic about causation. It measures association.
+The quantitative measure of overall fit is $r^2$, the coefficient of determination:
 
-To determine causation, you need experimental design, not just observation. You need to randomize: give some people more education (or assign them not to get it) and observe what happens to their earnings. You need temporal precedence: measure *x* before *y*, not both at the same time. You need to rule out confounders: show that the third variable did not cause both.
+$$R^2 = 1 - \frac{\text{SS}_\text{error}}{\text{SS}_\text{total}}$$
 
-Observational data can suggest causal hypotheses. But it cannot prove them. Regression on observational data answers: "How strongly are these variables associated?" It does not answer: "Does one cause the other?"
+$\text{SS}_\text{total} = \sum(y_i - \bar{y})^2$ is the total variation in $y$. $\text{SS}_\text{error} = \sum(y_i - \hat{y}_i)^2$ is the variation left unexplained after fitting the line. Their ratio is the fraction of total variation that remains unexplained. One minus that fraction is $R^2$ — the fraction explained.
 
-This distinction—between association and causation—is where most statistical mistakes happen. A consulting firm publishes: "Companies with more women on the board earn higher returns." Is that because women improve leadership? Because high-performing companies recruit more women? Because women are more likely to join boards of healthy companies? Regression alone cannot say.
+For the exam data, $r = 0.85$, so $R^2 = 0.7225$. The regression line explains 72.25% of the variation in final exam scores. The remaining 27.75% comes from everything the midterm score didn't capture: how much students studied between exams, illness, anxiety, luck on particular questions.
 
-Here is the principle: **Never claim causation from regression without an experiment or a theory that rules out confounding.**
-
-We also must name the assumption of linearity. Regression assumes the relationship between *x* and *y* is a straight line. Some relationships are not. A drug might have no effect below a threshold dose, then a strong effect above it, then a plateau at high doses. That is not linear. A linear regression would fit poorly and give misleading predictions.
-
-Always plot the data first. Look at the scatter. Does it look like a line? Or is there curvature? If there is curvature, try transforming the data (taking logarithms, for example) or fitting a nonlinear model.
-
-And finally, the assumption of extrapolation. The regression line is based on the range of data you observed. If your data range from 50 mg to 150 mg, the line was fit in that range. Predicting the effect at 200 mg is extrapolation. You are guessing what the relationship is outside the range you observed. It might bend. It might break. Extrapolation is unreliable.
-
-Here is what the regression line actually tells you: *Given the data I observed, and assuming the relationship is linear, and assuming the next observation comes from the same population, this is the best prediction of Y given X.*
-
-That is powerful. But it is not magic.
+27.75% is substantial. If you're using this line to advise students, you need to know that the model misses more than a quarter of the story. The line is useful. It is not complete.
 
 ---
 
-## Graduated exercises
+## What regression can't do
 
-### Warm-up
+Here is the most important section of this chapter, and the one most often ignored.
 
-1. You measure height and weight for a sample of adults. You calculate the correlation and find *r* = 0.75. Interpret this in a sentence.
+The regression line quantifies association. It finds the line that best predicts $y$ from $x$ in the data you have. It cannot tell you whether $x$ causes $y$.
 
-2. The scatter plot of advertising spend vs. sales shows points tilted downward from left to right. Is the correlation positive or negative?
+Two variables can be correlated for three distinct reasons.
 
-3. A researcher calculates $R^{2}$ = 0.36 for a model predicting test scores from study hours. What percentage of variation in test scores is explained by study hours? What percentage is not explained?
+First, $x$ causes $y$. More education leads to higher earnings because employers pay premiums for educated workers. Higher doses cause more pain relief because of the drug's biochemistry.
 
-4. The regression line is *ŷ* = 50 + 2*x*. Interpret the slope. Interpret the intercept.
+Second, $y$ causes $x$. Higher earnings enable investment in more education. A strong patient response to a drug causes the prescriber to increase the dose.
 
-### Application
+Third, a third variable causes both. Cognitive ability drives both educational attainment and earning potential, independently of each other. A confounding variable makes two otherwise unrelated things appear related.
 
-5. You have test score data for 40 students. Midterm scores: mean = 78, SD = 12. Final scores: mean = 80, SD = 10. Correlation = 0.80.
-   - Calculate the slope of the regression line predicting final from midterm.
-   - Calculate the intercept.
-   - Write the equation.
-   - Predict the final score for a student who scores 90 on the midterm.
-   - That student is 12 points above the mean midterm. How many points above the mean final are they predicted to be?
+All three of these situations produce a scatter with an upward tilt. All three produce a positive $r$. All three produce the same regression line. The line does not distinguish between them. It is agnostic about causation.
 
-6. A company analyzes the relationship between employee tenure (years) and salary (thousands of dollars). They fit a regression line and calculate $R^{2}$ = 0.42. They report: "Our analysis shows tenure causes salary increases." Critique this claim.
+<!-- → [INFOGRAPHIC: three-panel diagram, each showing the same upward scatter and identical regression line, but with different causal arrows underneath — Panel 1: X → Y (x causes y); Panel 2: Y → X (reverse causation); Panel 3: Z → X and Z → Y with no direct arrow between X and Y (confounding); all three labeled with a real example (education/earnings); caption: "The same regression line can arise from three completely different causal structures — the line cannot tell you which"] -->
 
-### Synthesis
+To establish that $x$ causes $y$, you need more than a scatter plot. You need an experiment: randomize who gets the treatment and who doesn't, then compare outcomes. You need temporal precedence: $x$ must precede $y$ in time. You need to rule out confounders: show that no third variable plausibly explains the association.
 
-7. You are analyzing data on house price vs. square footage. The correlation is 0.60. A real estate agent says, "Since the correlation is 0.60, we can explain 60% of the variation in house prices from square footage." Is that correct? Explain.
+Observational data — the kind most regression analyses use — can suggest causal hypotheses. It cannot confirm them. When a consulting firm reports "companies with more women on the board earn higher returns," that could mean board diversity improves performance, or it could mean high-performing companies are more likely to recruit women, or it could mean both are driven by better governance culture. Regression on observational data cannot tell you which.
 
-8. A residual plot shows a clear fan shape: the spread of residuals increases as fitted values increase. What does this suggest about the regression model? What assumption is violated?
+The rule: **Do not claim causation from regression without experimental evidence or a theory that rules out confounding.**
 
-### Challenge
+There is also the assumption of linearity to name honestly. Regression assumes $x$ and $y$ are related by a straight line. Many real relationships are not. A drug might have no effect below a threshold dose, a strong effect in a middle range, and a plateau at high doses. A linear regression through that data would give you a misleading average slope and unreliable predictions across the full range.
 
-9. You fit a regression predicting income from education level for 1,000 people. The correlation is 0.25 (weak). A colleague says, "Since the correlation is so small, education does not affect income." What would you tell them?
+Always plot the data first. If the scatter looks curved, do not force a straight line through it. Try transforming the variables — logarithms often linearize relationships that are multiplicative in their raw form — or fit a nonlinear model.
 
-10. Consider two scenarios: (A) A time-series regression showing that stock price follows a linear trend with $R^{2}$ = 0.95. (B) A cross-sectional regression predicting house prices from size with $R^{2}$ = 0.60. Why might (B) have more practical value than (A), despite the lower $R^{2}$?
+And finally, extrapolation. The regression line was fit in the range of $x$ you observed. If your data cover doses from 50 mg to 150 mg, the line knows about that range. Predicting the effect at 200 mg is extrapolation — you are guessing what the relationship does outside the region where you have evidence. The line might bend. It might break down entirely. Extrapolation is unreliable.
+
+<!-- → [IMAGE: scatter plot with regression line extending beyond the data range — data points clustered between x=50 and x=150 with the line fitting them well; to the right, the line continues as a dashed extension past x=150 labeled "extrapolation: no data here"; a curved dotted line suggests the true relationship might plateau or reverse beyond the observed range; caption: "The line was fit only where you have data — predictions beyond that range assume the pattern continues, which may be false"] -->
+
+The full and honest statement of what a regression line gives you: *Given the data I observed, assuming the relationship is linear in this range, assuming my next observation comes from the same population as my past observations, and assuming no unmeasured confounders are at work — this is the best linear prediction of $y$ given $x$.*
+
+That is genuinely powerful. But every word in that sentence matters.
 
 ---
 
-## Chapter summary — Closing reflection
+## A closing thought on what regression reveals
 
-This chapter brings us to the end of a thirteen-chapter journey. We began with sampling and data, moved through probability and distributions, built confidence and hypothesis testing, and learned analysis of variance. Now we can quantify association.
+Galton noticed that children of exceptional parents tend toward the middle. He was puzzled at first, then understood: the exceptional parent is exceptional partly for reasons that transmit to children — genetics, environment, habit — and partly for reasons that don't — luck, timing, circumstance. The regression line is the mathematical statement of how much transmits and how much doesn't.
 
-The regression line is the machinery that binds two variables together mathematically. It is the line that minimizes squared prediction error. It passes through the means of both variables. Its slope is correlation scaled by the ratio of standard deviations. Its $R^{2}$ tells you how much of the variation is explained. Its residuals tell you what is left unexplained.
+The slope tells you the transmission rate. A slope of 1.0 would mean perfect transmission — every deviation in the parent predicts an equal deviation in the child. A slope less than 1 (which is what you get whenever $r < 1$) means partial transmission — the child inherits some of the deviation but not all. The remaining fraction regresses to the mean.
 
-But here is what we have learned across all thirteen chapters: Statistics is not the mathematics of certainty. It is the mathematics of reasonable inference under doubt.
+This is why regression and correlation are not just computational tools. They are a way of seeing how much of any pattern in the world is stable and how much is transient. The physicist finds $R^2 = 0.999$ and concludes the relationship is a physical law — almost everything is transmitted, almost nothing is noise. The social scientist finds $R^2 = 0.4$ and concludes that factors are interacting in complex, poorly understood ways — much is transmitted, but much more is left unexplained.
 
-In Chapter 1, we learned that samples are never perfectly representative. There is always sampling error.
-
-In Chapter 2, we learned that a single mean or median can hide the shape of the data. Summary statistics simplify but also obscure.
-
-In Chapters 3 through 5, we learned that probability is not fate. Randomness means we cannot predict individual outcomes, only long-run frequencies.
-
-In Chapters 6 through 9, we learned that distributions have shape, and that shape lets us bound our uncertainty. We can say, with a stated confidence, where a parameter lies.
-
-In Chapters 10 through 12, we learned to test whether our data are consistent with a hypothesis. We learned that we could be wrong, and we quantified the risk.
-
-Now, in Chapter 13, we learn to quantify association. The regression line shows us how one variable predicts another. But it does not show us causation. It does not show us what will happen if we intervene. It shows us what we observe.
-
-And that distinction—between what we observe and what we can do—is the boundary of statistical reasoning. You can observe a correlation and say, "These move together." You cannot observe a correlation and say, "This one causes that one" without evidence from an experiment or a theory that rules out confounding.
-
-Regression to the mean taught Galton that the world has a tendency to moderate extremes. Children inherit their parents' traits but also inherit randomness. Each generation is not as extreme as the last. Exceptional parents have somewhat ordinary children. Terrible students sometimes become accomplished people.
-
-The regression line is mathematics captured that insight. It says: *Predict the next observation by moving part of the way from the mean toward the extreme you observed.* Not all the way. Some of the way. Because some of what made the observation extreme was luck, and luck is unlikely to repeat.
-
-This is profound wisdom hidden in algebra.
+The line is not the world. It is a sketch of the part of the world that follows a pattern.
 
 ---
 
 ## What would change my mind
 
-I have presented regression as a descriptive tool: it summarizes how variables move together in data you have. I would revise this chapter if you presented evidence that practitioners routinely confuse "association" with "causation" in a way that could be avoided through different pedagogy. Perhaps a more forceful reiteration of the causal/associational distinction at multiple points would help. Or perhaps teaching regression after a dedicated chapter on experimental design would reduce confusion. I am not now certain.
+The most important claim in this chapter is that correlation cannot establish causation. This is correct for observational data, but it deserves a nuance I have elided: certain designs applied to observational data — instrumental variables, regression discontinuity, difference-in-differences — can provide credible causal estimates under specific assumptions. They are not magic; they still require assumptions that may fail. But if you showed me compelling evidence from such a design, I would accept the causal claim even from observational data. The line between "observational" and "experimental" is not as sharp as introductory statistics courses suggest.
+
+The expected-count floor for chi-square (from Chapter 11) has an analogue here: the normal-residuals assumption for inference. I teach it as a requirement, but for large samples, the central limit theorem makes inference relatively robust to non-normality. In practice, the assumption matters most for small samples and for the tails of prediction intervals.
 
 ---
 
-## Still puzzling
+## Connections forward
 
-I do not yet fully understand how to teach the leap from "I calculated r" to "I can interpret what this line means for prediction." The conceptual step from correlation as a number to regression as a predictive tool is where students most often get stuck. Better analogies or an earlier cold open might help. I would welcome alternatives.
+This chapter closes the statistical core of this book. But regression is not the end of the story — it is the beginning of a much larger one.
+
+Multiple regression extends everything here to more than one predictor. Instead of $\hat{y} = b_0 + b_1 x$, you have $\hat{y} = b_0 + b_1 x_1 + b_2 x_2 + \cdots + b_k x_k$. The principle is identical — minimize SSE — but now you're working in higher dimensions, and the interpretation of each slope becomes "the effect of this predictor while holding all others constant." That last phrase is where a great deal of applied statistics lives.
+
+Logistic regression handles the case where $y$ is categorical rather than continuous — whether a patient survives or doesn't, whether a customer buys or doesn't. The line becomes a curve, and the prediction becomes a probability rather than a measurement.
+
+Time series analysis handles the case where your observations are not independent — each data point in a sequence depends on the ones before it. The regression framework breaks down when the independence assumption fails, and you need different tools.
+
+And throughout all of this, the causal inference question remains open. Randomized controlled experiments remain the gold standard for establishing causation. The methods of causal inference from observational data — instrumental variables, natural experiments, matching — are the frontier where statistics and science meet. That frontier is where the most important questions live.
 
 ---
 
-## Tags
+## Exercises
 
-linear regression, correlation coefficient, least-squares line, residuals, coefficient of determination, causation, prediction, association
+### Warm-up
 
----
+**13.1** *(Interpreting r.)* A researcher reports that the correlation between daily hours of exercise and resting heart rate is $r = -0.68$. (a) What does the sign tell you? (b) What does the magnitude tell you? (c) Does this mean that exercising more *causes* a lower resting heart rate? What additional evidence would you need to make that claim?
+
+**13.2** *(r vs. r².)* A regression model predicting house price from square footage has $r = 0.75$. (a) Calculate $r^2$. (b) A real estate agent says, "Square footage explains 75% of price variation." Is that correct? (c) What fraction of price variation is left unexplained, and what kinds of variables might account for it?
+
+**13.3** *(Reading a regression line.)* The regression line for predicting a student's final exam score from their midterm score is $\hat{y} = 12 + 0.8x$. (a) Interpret the slope in context. (b) Interpret the intercept — does it have a meaningful real-world interpretation here? (c) Predict the final score for a student who scored 70 on the midterm.
+
+### Application
+
+**13.4** *(Computing the regression line.)* A company tracks advertising spend (thousands of dollars) and monthly sales (thousands of units). Summary statistics: $\bar{x} = 8$, $\bar{y} = 50$, $s_x = 3$, $s_y = 12$, $r = 0.78$. (a) Calculate the slope. (b) Calculate the intercept. (c) Write the equation. (d) Predict monthly sales when advertising spend is \$11,000. (e) Is this a prediction or an extrapolation? How do you know?
+
+**13.5** *(Regression to the mean.)* Using the data from Exercise 13.4, suppose a particular month had advertising spend \$5,000 below the mean. (a) How many units below the mean sales does the regression line predict for that month? (b) Is the predicted deviation smaller or larger than the $x$ deviation? (c) Explain this in terms of regression to the mean and what it tells you about the role of luck in month-to-month performance.
+
+**13.6** *(Residuals and r².)* For five data points, the actual $y$ values and predicted $\hat{y}$ values are:
+
+| $y$ | $\hat{y}$ | Residual | Residual² |
+|---|---|---|---|
+| 42 | 38 | | |
+| 55 | 59 | | |
+| 63 | 61 | | |
+| 47 | 50 | | |
+| 70 | 68 | | |
+
+Complete the table. The mean of $y$ is 55.4; $\text{SS}_\text{total} = 492.8$. Calculate $R^2$ and interpret it.
+
+### Synthesis
+
+**13.7** *(Causation claims.)* A data scientist analyzes a large company's HR records and finds that employees who attend more optional training sessions have higher salaries ($r = 0.54$, $p < 0.001$). The HR team proposes: "We should require more optional training because it raises salaries." Identify the three causal explanations that could produce this correlation. Which do you think is most plausible, and why? What would you need to test your preferred explanation?
+
+**13.8** *(Nonlinearity and model choice.)* A researcher fits a linear regression to data on drug dose (0–200 mg) vs. symptom relief. The scatter plot shows the relationship is clearly curved — relief rises steeply from 0 to 100 mg, then flattens from 100 to 200 mg. The linear regression has $R^2 = 0.71$. (a) What does the residual plot likely look like? (b) Why is $R^2 = 0.71$ misleading here? (c) What would you do differently?
+
+### Challenge
+
+**13.9** *(What the slope really means.)* Two researchers study the same population and fit regression lines predicting son's height from father's height. Researcher A finds $b_1 = 0.45$ with $r = 0.45$ (since $s_x = s_y$ in their sample). Researcher B, using a different sample with much higher variance in fathers' heights, finds $b_1 = 0.45$ with $r = 0.62$. Explain how the same slope can correspond to different correlations. What does each researcher's $r$ tell you that the slope alone does not?
+
+**13.10** *(The honest limit.)* A graduate student fits a regression model predicting college GPA from high school GPA across 800 students. She gets $R^2 = 0.38$ and a statistically significant slope of 0.6. She presents the finding as: "High school GPA is a strong predictor of college GPA." Critique this claim on three grounds: the meaning of $R^2 = 0.38$, the risk of confounding, and what "predictor" means versus "cause." Suggest one piece of additional data that would strengthen her analysis.
+
 ---
 
 ## LLM Exercise — Chapter 13: Linear Regression and Correlation (Analyze One Dataset Project) — FINAL CLOSER
 
-**Project:** Analyze One Real Dataset — final integration.
-**What you're building this chapter:** linear regression on your dataset + the compiled analysis report.
+**Project:** Analyze One Real Dataset — final integration.  
+**What you're building this chapter:** linear regression on your dataset + the compiled analysis report.  
 **Tool:** **Claude Code** + **Cowork** for final assembly.
 
 ---
@@ -565,14 +358,12 @@ close.
 **Connection to previous chapters:** Every prior chapter feeds this. The "what 13 chapters taught me" coda is the project's reflective close.
 
 **Preview of next chapter:** There is no next chapter — this is the close. What's next is the analysis report itself: a portfolio-quality piece of statistical analysis that any data-curious reader could follow.
-```
-
 
 ---
 
 ## 🕰️ AI Wayback Machine
 
-**Gertrude Cox** was first woman to chair a statistics department in the US — at North Carolina State — and a pioneer of experimental design and regression methods.
+**Gertrude Cox** was the first woman to chair a statistics department in the US — at North Carolina State — and a pioneer of experimental design and regression methods.
 
 **Run this:**
 
