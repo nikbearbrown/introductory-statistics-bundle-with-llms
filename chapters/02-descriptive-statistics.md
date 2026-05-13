@@ -1,327 +1,144 @@
 # Chapter 2 — Descriptive Statistics
-
-## Three title options
-
-1. **The Shape of Numbers: How the middle, the spread, and the story in a histogram let you see what data are actually saying**
-2. **What Lives in the Distribution: Center, variation, and the skew that separates a precise picture from a lie**
-3. **Reading a Dataset: From histograms to box plots—the visual and numerical tools that make data speak**
+*What the numbers are actually telling you.*
 
 ---
 
-## TL;DR
+Here is a fact that should bother you: the same dataset can produce two completely honest, completely contradictory summaries.
 
-Descriptive statistics is how you see what a dataset is actually showing. Start with a picture: a histogram reveals whether the data cluster in one place or spread across many. Then measure the center—the mean (average) or median (middle value)—and ask which one makes sense for your question. Finally, quantify the spread. A standard deviation tells you how far, on average, values stray from the mean. When one number sits far from the others (an outlier), the median becomes more honest than the mean. The shape of the distribution—symmetrical, left-skewed, or right-skewed—changes which measures to trust.
+A recruiter tells you the engineers at her company earn an average of $95,000 a year. She's not lying. The mean really is $95,000. But when you look at the spreadsheet, you find one principal engineer earning $780,000 and forty-two junior engineers earning between $48,000 and $62,000. The median — the value right in the middle of the ordered list — is $51,500. Both numbers are correct. They describe the same forty-three people. And yet one of them is honest and one of them is, in the relevant sense, a lie.
 
----
-
-## Cold open: The salary negotiation
-
-You walk into a hiring meeting at a tech company. The recruiter says, "Our engineers earn an average of $95,000 a year." You're impressed. Then you ask to see the distribution. The spreadsheet lands on your desk: one principal engineer earning $780,000, and forty-two junior engineers earning $48,000 to $62,000. The mean ($95,000) is pulled up by that single outlier. The median—the true middle—is $51,500. Same dataset. Two completely different stories.
-
-This chapter teaches you to see both stories, and to know which one to believe.
-
-### Learning objectives
-
-By the end of this chapter you will be able to:
-
-- **Display** data using histograms, stem-and-leaf plots, and box plots, and **interpret** what the shape tells you.
-- **Calculate** the mean, median, and mode, **choose** the right one for your question, and **understand** why outliers break the mean.
-- **Compute** the range, interquartile range (IQR), variance, and standard deviation, and **translate** what each one measures.
-- **Compare** datasets using measures of spread and identify potential outliers using the 1.5 × IQR rule.
-- **Explain** how skewness changes the relationship between mean and median.
-- **Determine** percentiles and quartiles from ordered data.
-
-### Prerequisites
-
-Comfort with arithmetic (addition, division, squaring). Ability to order numbers from smallest to largest. Willingness to stare at a list of data and ask: "What is actually happening here?"
-
-### Why this chapter matters
-
-Every time you read "the average American earns," "test scores have improved," or "this product is rated higher"—you are reading a statistical claim. Chapter 1 taught you to collect data without bias. This chapter teaches you to describe what the data show truthfully. The mean can lie. The median might mislead you in a different way. A histogram can be designed to exaggerate or hide the story. Your job is to see through the noise and report what's real.
+That's what descriptive statistics is about. Not computation — computing the mean of a list is arithmetic, and arithmetic is not statistics. Statistics is knowing *which* number to compute, *why* that number answers your question, and *what happens* to your answer when the data aren't well-behaved. Everything in this chapter is a consequence of that one problem.
 
 ---
 
-## Concept 1 — Getting the shape: Visualization before you measure
+## First, look at the thing
 
-When you have two thousand observations—two thousand salaries, two thousand test scores, two thousand customer wait times—a raw list is overwhelming. You need a picture first.
+Before you calculate anything, you should look at the data. I mean actually look — draw a picture of it. This seems obvious, but it is the step that gets skipped most often, and skipping it is the source of a remarkable number of embarrassments.
 
-### The histogram: where the data actually cluster
+The tool for looking is the **histogram**. Take your data — two thousand salaries, or fifty test scores, or thirteen house prices — and divide the range of values into adjacent intervals of equal width. Count how many observations fall in each interval. Draw a bar for each interval, height equal to the count. The bars should touch, because the underlying variable is continuous.
 
-A **histogram** divides the data into adjacent intervals (called *bins* or *classes*) and counts how many observations fall in each. The height of each bar is the count (or *frequency*). Unlike a bar graph, the bars touch because the intervals are continuous.
+Now you can see things you couldn't see from the numbers alone. Are the data piled up in one place, or spread across the whole range? Is there a long tail on one side? Are there two separate humps — suggesting your "population" is actually two different groups? Is there one bar sitting far away from all the others?
 
-To build one:
+<!-- → [IMAGE: annotated histogram showing four archetypal shapes side by side — symmetric bell, right-skewed, left-skewed, bimodal — with callout arrows labeling the tail direction and the relationship between mean and median in each; student should see at a glance what "shape" means before reading about it] -->
 
-1. Find the minimum and maximum values in your dataset.
-2. Decide how many intervals you want (typically 5 to 15, depending on your dataset size). A rough rule: use the square root of *n*, the number of observations. For 100 observations, that's 10 intervals.
-3. Calculate the interval width: (max − min) / number of intervals.
-4. Set the first interval boundary slightly below the minimum (so no value lands on an edge boundary and creates ambiguity).
-5. Count how many observations fall in each interval.
-6. Draw a bar for each interval with height equal to the count.
+That last thing — one bar sitting far away — is an outlier, and it is the source of all your trouble with the mean. More on that shortly.
 
-[FIGURE: Histogram example. Horizontal axis: continuous variable (e.g., salary in dollars), divided into adjacent intervals. Vertical axis: frequency (count). Bars touch each other. Title demonstrates how to read height and frequency.]
+For a smaller dataset, say twenty or thirty values, there is a more informative version of the histogram called the **stem-and-leaf plot**. Each number is split into a "stem" (all digits except the last) and a "leaf" (the last digit). Line up the stems vertically, and write each leaf next to its stem. The result is a histogram that preserves the actual values. Twenty exam scores — 49, 53, 55, 55, 61, 63, 67, 68, 68, 69, 69, 72, 73, 74, 78, 80, 83, 88, 88, 88 — arranged this way, you see immediately that the scores cluster in the 60s and 70s, with three students stuck in 88 and one unlucky person at 49.
 
-**Why it matters:** The histogram shows you where the data cluster. Are they bunched in the middle, or spread across the range? Are they higher on one side? That shape tells you everything about what to measure next.
+<!-- → [IMAGE: rendered stem-and-leaf plot of the twenty exam scores above, showing stems 4–8 with leaves written out, and a dotted bracket on the right indicating how to read the shape as a sideways histogram] -->
 
-#### A worked example — histogram from grouped data
+The third picture is the **box plot**, which is really a picture of five numbers: the minimum, the 25th percentile (called Q1), the median, the 75th percentile (Q3), and the maximum. Draw a box from Q1 to Q3. Put a line inside the box at the median. Extend lines — "whiskers" — from the box out to the min and max. Any values that sit suspiciously far from the box get plotted as individual points.
 
-Fifty sociology students reported hours spent on social media per week. The frequency table shows:
+That "suspiciously far" has a precise meaning: a value is flagged as a suspected outlier if it lies more than $1.5 \times (Q3 - Q1)$ below Q1 or above Q3. The quantity $Q3 - Q1$ is called the **interquartile range**, or IQR, and it measures the spread of the middle 50% of your data. The IQR is a crucial idea — we'll come back to it when we measure spread properly.
 
-| Hours (interval) | Frequency |
-|---|---|
-| 0–4.9 | 8 |
-| 5–9.9 | 14 |
-| 10–14.9 | 16 |
-| 15–19.9 | 9 |
-| 20–24.9 | 3 |
+The box plot is what you reach for when you want to compare two groups at a glance, or when you have too many observations for a stem-and-leaf plot to stay readable.
 
-To construct the histogram:
-
-- Interval width: all intervals are 5 hours wide (by design).
-- Bars are drawn at the x-values 0–4.9, 5–9.9, and so on.
-- Heights are 8, 14, 16, 9, and 3 respectively.
-- The tallest bar is at 10–14.9 hours. That's where most students cluster.
-
-**Observation:** The data are not symmetrical. More students report heavy use (10–15 hours) than light use (0–5 hours). The distribution is *skewed left*—it has a long tail toward the lower hours. This skew is important; it tells us the mean will be pulled higher than the median.
-
-### Stem-and-leaf plots: seeing individual values
-
-A **stem-and-leaf plot** (or **stemplot**) is useful for small datasets (up to about 50 observations). It preserves the actual data values while showing the distribution shape.
-
-Each value is split into a *stem* (the leading digit or digits) and a *leaf* (the final significant digit).
-
-For example: the value 43 has stem 4 and leaf 3. The value 156 has stem 15 and leaf 6.
-
-To construct:
-
-1. List stems in a vertical column, from smallest to largest.
-2. For each observation, write its leaf next to the appropriate stem.
-3. Arrange leaves in increasing order (left to right) next to each stem.
-
-#### A worked example — test scores
-
-Exam scores for 20 students: 49, 53, 55, 55, 61, 63, 67, 68, 68, 69, 69, 72, 73, 74, 78, 80, 83, 88, 88, 88.
-
-| Stem | Leaf |
-|---|---|
-| 4 | 9 |
-| 5 | 3, 5, 5 |
-| 6 | 1, 3, 7, 8, 8, 9, 9 |
-| 7 | 2, 3, 4, 8 |
-| 8 | 0, 3, 8, 8, 8 |
-
-**Reading the plot:** Most scores cluster in the 60s and 70s. The 80s have three students with the score 88, which appears frequently. The 40s and 50s have fewer observations. The shape suggests the distribution has a slight left skew—more concentration in the middle-to-upper range, with a tail toward the lower scores.
-
-### Box plots: the five-number summary at a glance
-
-A **box plot** (also called a **box-and-whisker plot**) summarizes data using five numbers:
-
-- **Minimum:** the smallest value
-- **Q1 (first quartile):** the 25th percentile; 25% of data fall at or below this
-- **Median (Q2):** the 50th percentile; the middle value
-- **Q3 (third quartile):** the 75th percentile; 75% of data fall at or below this
-- **Maximum:** the largest value
-
-The **interquartile range (IQR)** = Q3 − Q1. It captures the spread of the middle 50% of the data.
-
-A box plot shows:
-
-- A box from Q1 to Q3 (the IQR)
-- A line inside the box at the median
-- Whiskers (lines) extending from Q1 to the minimum and from Q3 to the maximum
-- **Outliers** plotted as individual points beyond the whiskers
-
-[FIGURE: Box plot. Horizontal axis: variable (e.g., age, salary). Box spans Q1 to Q3, with median line marked inside. Whiskers extend to min and max. Any points beyond 1.5 × IQR from Q1 or Q3 are plotted separately as outliers.]
-
-**Outlier detection:** A value is a *suspected outlier* if it lies:
-- Below Q1 − 1.5(IQR), or
-- Above Q3 + 1.5(IQR)
-
-This rule separates unusual values from those that are simply at the extreme end of a normal spread.
-
-#### A worked example — real estate prices
-
-Thirteen house prices (in dollars): 114,950; 158,000; 230,500; 387,000; 389,950; 479,000; 488,800; 529,000; 575,000; 639,000; 659,000; 1,095,000; 5,500,000.
-
-Five-number summary:
-- Min = 114,950
-- Q1 = (230,500 + 387,000) / 2 = 308,750
-- Median = 488,800 (the 7th value)
-- Q3 = (639,000 + 659,000) / 2 = 649,000
-- Max = 5,500,000
-
-IQR = 649,000 − 308,750 = 340,250
-
-Outlier boundaries:
-- Lower: 308,750 − 1.5(340,250) = −201,625 (no houses below this)
-- Upper: 649,000 + 1.5(340,250) = 1,159,375
-
-The house priced at 5,500,000 exceeds the upper boundary. **It is a suspected outlier.** The 1,095,000 house is also unusual but falls within the whisker range.
-
-### Common misconceptions
-
-**"A histogram always has to start at zero."** No. The vertical axis should start at zero, but the horizontal axis (the variable being measured) can start at any sensible point. If salaries range from $40,000 to $120,000, don't force the axis to include $0; you'll waste space and obscure the story.
-
-**"Outliers are always mistakes."** Sometimes. But outliers can also reveal important facts—a student who studied far more than peers, a customer with an exceptionally large purchase, a measurement error. Always investigate.
-
-**"The box plot hides information."** True, it summarizes. But that's the point. For 10,000 observations, a box plot is more informative than printing the list.
+<!-- → [IMAGE: labeled box plot diagram showing a single distribution — box spanning Q1 to Q3, median line inside, whiskers extending to min and max, two outlier points plotted individually beyond the upper whisker; each element labeled with its name and the 1.5×IQR boundary marked on the upper whisker] -->
 
 ---
 
-## Concept 2 — Measuring the center: Mean, median, mode
+## Three ways to find the center
 
-Three measures describe the "center" of data. Each answers a different question.
+Now we can talk about measuring things. The first thing anyone wants to know about a dataset is: what's typical? What's the middle? This turns out to have three different answers, and choosing the wrong one is a very common mistake.
 
-### The mean: the balance point
+### The mean
 
-The **mean** (also called the *arithmetic mean* or *average*) is the sum of all values divided by the number of values. In symbols:
+The **mean** (also called the arithmetic mean, or just "the average") is the sum of all values divided by the count of values. In symbols:
 
 $$\overline{x} = \frac{\sum_{i=1}^{n} x_i}{n}$$
 
-where $\overline{x}$ (read "*x* bar") is the sample mean, $\sum$ means "add up," $x_i$ is the *i*-th observation, and *n* is the sample size.
+The $\overline{x}$ (read "x-bar") is the sample mean. If you're describing a whole population rather than a sample from it, the symbol changes to $\mu$ (the Greek letter mu), and $n$ becomes $N$. The formula is otherwise identical.
 
-For a population, the symbol is $\mu$ (mu, the Greek letter m), pronounced "myoo":
+The physical intuition for the mean is a balance point. Imagine placing weights on a number line, one weight per observation. The mean is the fulcrum location that keeps the whole thing level. This intuition immediately tells you something important: a single heavy weight placed far from the others will drag the fulcrum toward it. An outlier pulls the mean.
 
-$$\mu = \frac{\sum_{i=1}^{N} x_i}{N}$$
+<!-- → [IMAGE: number line with five evenly spaced weights (2, 4, 6, 8, 10) balanced on a fulcrum at 6, then a second number line with the same four weights plus one at 30 showing the fulcrum shifting right — illustrates outlier effect on mean without words] -->
 
-where *N* is the population size.
+You can also compute the mean when some values repeat, by multiplying each distinct value by how many times it appears:
 
-**Intuition:** Imagine the data as weights balanced on a seesaw. The mean is the point where the seesaw balances. If you have observations 2, 4, 6, the mean is 4. If you shift one value to 10, the mean shifts to (2 + 4 + 10) / 3 = 5.33. The seesaw tips to follow the outlier.
+$$\overline{x} = \frac{\sum f_i \cdot x_i}{n}$$
 
-#### When data repeat: use frequencies
+where $f_i$ is the frequency of value $x_i$.
 
-If the data are 1, 1, 1, 2, 2, 3, 4, 4, 4, 4, 4 (where some values repeat), calculate:
+### The median
 
-$$\overline{x} = \frac{3(1) + 2(2) + 1(3) + 5(4)}{11} = \frac{35}{11} = 3.18$$
+The **median** is the middle value of an ordered list. Arrange your observations from smallest to largest. If $n$ is odd, the median is the value at position $\frac{n+1}{2}$. If $n$ is even, there is no single middle value — the median is the average of the two values at positions $\frac{n}{2}$ and $\frac{n}{2} + 1$.
 
-Multiply each distinct value by its frequency, sum, and divide by total count.
+The median is not pulled by outliers. It is determined by position, not by magnitude. If you add a billionaire to a room of middle-class people, the median income of the room barely moves; the mean income rockets. This is the key difference.
 
-#### A worked example — ER patient ages
+Here is the question that tells you which one to use: *Is there an outlier, or is the distribution strongly skewed?* If yes — use the median. If the distribution is roughly symmetric with no extreme values — mean and median will be close to each other, and either works.
 
-A hospital tracks ages of 40 patients in the emergency room over one week (sorted): 3, 4, 8, 8, 10, 11, 12, 13, 14, 15, 15, 16, 16, 17, 17, 18, 21, 22, 22, 24, 24, 25, 26, 26, 27, 27, 29, 29, 31, 32, 33, 33, 34, 34, 35, 37, 40, 44, 44, 47.
+A small town with 50 residents: 49 earn $30,000 a year; one earns $5,000,000. The mean is $129,400. The median is $30,000. One of these answers tells you what life is like for most people in that town. The other answers a question nobody was asking.
 
-Sum = 944; Mean = 944 / 40 = 23.6 years.
+### The mode
 
-**Observation:** The mean is 23.6, but most patients are younger (cluster in the 14–27 range). One outlier (47 years) and several older patients pull the mean upward. This is the nature of the mean: it is sensitive to extreme values.
+The **mode** is the most frequently occurring value. A dataset can have one mode (unimodal), two (bimodal), or more. The mode is the only measure of center that applies to categorical data — if you sell T-shirts in six colors, you can't average the colors, but you can find the most popular one.
 
-### The median: the middle, unmoved by outliers
+For numerical data, the mode is most useful when there are clear, discrete peaks. If an exam produces a bimodal distribution — many students clustered near 55, many others clustered near 85 — the mode reveals that your class contains two distinct groups (perhaps students who did and didn't attend review sessions). The mean and median would give you something around 70, which doesn't describe either group.
 
-The **median** is the middle value when data are ordered from smallest to largest. For *n* observations, the median is at position (*n* + 1) / 2.
+### How shape distorts center
 
-- If *n* is odd, the median is the middle value (e.g., for 7 values, position 4).
-- If *n* is even, the median is the average of the two middle values (e.g., for 40 values, average of positions 20 and 21).
+When a distribution is **symmetric**, the mean, median, and mode are all approximately equal. There's no distortion to worry about.
 
-In symbols, the median is often denoted *M*.
+When a distribution is **right-skewed** — it has a long tail toward high values — the mean gets pulled right, past the median, which is past the mode. The order is: mode < median < mean.
 
-**Intuition:** The median is not pulled by outliers. Half the data are at or below it; half are at or above it. If you have a billionaire in a room of middle-class people, the mean income soars but the median stays close to what most people earn.
+When a distribution is **left-skewed** — long tail toward low values — the pulling goes the other direction: mean < median < mode.
 
-#### Continuing the ER example
+This is why the shape of the histogram matters before you compute anything. If the histogram shows a right-skewed distribution, you already know the mean is going to be inflated relative to the median, and you should be suspicious of any claim that reports only the mean.
 
-40 patients: position = (40 + 1) / 2 = 20.5. The median is between the 20th and 21st values (the two 24s).
-
-Median = (24 + 24) / 2 = 24 years.
-
-**Comparison:** Mean = 23.6 years; Median = 24 years. They're close here because the outlier (47) is not extreme enough to dominate. But the median gives a slightly clearer picture of the "typical" patient age.
-
-#### The critical salary example
-
-A small town has 50 people. One earns $5,000,000; the other 49 earn $30,000.
-
-Mean = (5,000,000 + 49 × 30,000) / 50 = $129,400.
-Median = $30,000.
-
-The mean is a lie for this dataset. The median tells the truth: most people in the town earn about $30,000.
-
-**Rule of thumb:** When data contain outliers or extreme values, prefer the median. When data are roughly symmetrical, the mean and median are similar; either works.
-
-### The mode: the most frequent value
-
-The **mode** is the value that appears most often. A dataset can have one mode (unimodal), two modes (bimodal), or many modes (multimodal). Some datasets have no mode (all values appear equally often).
-
-**When to use the mode:**
-
-- Categorical data: "Which color T-shirt sells most?" The mode is the category with the highest count.
-- Discrete data with clear peaks: if a dataset has two clear bumps in the histogram, the modes are the peaks.
-- Marketing: "What is the typical purchase amount?" might be better answered by the mode than the mean (especially if one giant order exists).
-
-#### A worked example — exam scores
-
-Scores for 20 students: 50, 53, 59, 59, 63, 63, 72, 72, 72, 72, 76, 78, 81, 83, 84, 84, 84, 90, 93, 94.
-
-The value 72 appears four times (more than any other). Mode = 72.
-
-**Bimodal example:** Five real estate exam scores: 430, 430, 480, 480, 495.
-- 430 appears twice
-- 480 appears twice
-- 495 appears once
-
-The dataset is bimodal: modes are 430 and 480.
-
-### The relationship between center measures and skewness
-
-When a distribution is **symmetrical**, the mean, median, and mode are all approximately equal.
-
-When a distribution is **skewed right** (long tail toward high values), the mean > median > mode. The mean gets pulled up by the high outliers.
-
-When a distribution is **skewed left** (long tail toward low values), the mean < median < mode. The mean gets pulled down by the low outliers.
-
-[FIGURE: Three histograms side by side. Left: symmetrical distribution, mean = median = mode. Center: right-skewed, mean pulled right. Right: left-skewed, mean pulled left. Arrows show relative positions of mean, median, mode.]
-
-### Common misconceptions
-
-**"The mean is always the best measure of center."** No. It breaks when outliers exist. Use median for data with extremes.
-
-**"The mode is only useful for categories."** Modes appear in quantitative data too, and they tell a real story about frequency.
-
-**"You report all three and let the reader choose."** That's lazy. *You* analyze the data. *You* decide which measure answers the question. Report the one that's honest for the question at hand, and explain why you chose it.
+<!-- → [INFOGRAPHIC: three side-by-side distribution curves — symmetric, right-skewed, left-skewed — each with vertical lines marking mode, median, and mean positions, and the inequality relationship (mode < median < mean, etc.) printed below each; the canonical reference diagram for skewness and center] -->
 
 ---
 
-## Concept 3 — Measuring spread: Why the middle is only half the story
+## Measuring spread
 
-Two datasets can have the same mean but very different shapes. Spreadness (or *variation*) is the other half of understanding data.
+Two datasets can have identical means and still be completely different. Consider two supermarkets, both with a mean customer wait time of five minutes. At Supermarket A, the actual wait times range from four minutes to six minutes. At Supermarket B, they range from one minute to eleven minutes. The average is the same; the experience is not.
 
-### The range: simple but crude
+Spread is the second dimension of any distribution. You need four tools to measure it properly.
 
-The **range** is the difference between the maximum and minimum values:
+### The range
 
-$$\text{Range} = \text{Max} − \text{Min}$$
+The **range** is the maximum minus the minimum. It is easy to compute and instantly interpretable — "salaries at this company range from $35,000 to $180,000" is useful information. But it is determined entirely by the two most extreme values, which means one outlier can make it useless. Use the range as a first orientation, then follow up with something better.
 
-It's easy to compute but tells you nothing about what happens in between. Two datasets with the same range could be entirely different: one could have all values clustered at the endpoints, the other spread evenly across.
+### The interquartile range
 
-### The interquartile range: the spread of the middle
+The **IQR** is $Q3 - Q1$: the range of the middle 50% of the data. Because it ignores the bottom 25% and the top 25%, outliers don't affect it. The IQR is the spread measure to use when outliers are present, which is most of the time in real data.
 
-The **IQR** is Q3 − Q1. It measures the spread of the middle 50% of the data and is **not affected by outliers** (because Q1 and Q3 are themselves robust to extremes). This makes IQR more useful than range when outliers are present.
+And as noted earlier, the IQR is also used to define what counts as an outlier: a value is suspicious if it lies below $Q1 - 1.5 \times \text{IQR}$ or above $Q3 + 1.5 \times \text{IQR}$. This is not a law of nature — it's a convention that works well in practice. Values flagged by this rule should be *investigated*, not automatically discarded.
 
-### Variance and standard deviation: measuring average squared distance from the mean
+### Variance
 
-The **variance** is the average of the squared deviations from the mean. In symbols, for a sample:
+The **variance** is the average squared distance from the mean. For a sample of $n$ observations:
 
 $$s^2 = \frac{\sum_{i=1}^{n} (x_i - \overline{x})^2}{n - 1}$$
 
-For a population:
+For a population of $N$:
 
 $$\sigma^2 = \frac{\sum_{i=1}^{N} (x_i - \mu)^2}{N}$$
 
-Note the difference: sample variance divides by *n − 1* (Bessel's correction), while population variance divides by *N*.
+Why square the deviations? Because raw deviations $(x_i - \overline{x})$ always sum to zero — the positive and negative deviations cancel exactly, because $\overline{x}$ is the balance point. Squaring makes every deviation positive, so they accumulate rather than cancel.
 
-**Why squared deviations?** Because deviations can be positive or negative. Squaring makes them all positive. Squaring also amplifies large deviations (a distance of 10 from the mean becomes 100; a distance of 100 becomes 10,000), which gives weight to outliers.
+Why divide by $n - 1$ for samples rather than $n$? This is Bessel's correction. When you compute a sample mean, you've already used the data to estimate $\mu$, which introduces a slight downward bias into the sum of squared deviations. Dividing by $n-1$ instead of $n$ corrects for this bias. (The full derivation belongs in a more advanced course; for now, the rule is: sample → divide by $n-1$, population → divide by $N$.)
 
-The **standard deviation** is the square root of variance:
+The squaring also amplifies large deviations more than small ones. A value 10 units from the mean contributes 100 to the sum; a value 100 units away contributes 10,000. This means variance (and standard deviation) is sensitive to outliers — which is a reason to prefer IQR when outliers are present.
 
-$$s = \sqrt{s^2} \quad \text{(sample)}$$
+### Standard deviation
 
-$$\sigma = \sqrt{\sigma^2} \quad \text{(population)}$$
+The **standard deviation** is simply the square root of variance:
 
-Taking the square root returns you to the original units of measurement. If you're measuring heights in inches, the standard deviation is also in inches (whereas variance would be in square inches—an abstract unit).
+$$s = \sqrt{s^2} \qquad \sigma = \sqrt{\sigma^2}$$
 
-#### A worked example — calculating standard deviation step by step
+Why take the square root? Because variance is in *squared* units — if you're measuring heights in inches, variance is in square inches, which means nothing. Standard deviation brings you back to the original units. If incomes are measured in dollars, the standard deviation is also in dollars. That makes it interpretable: on average, values stray roughly $s$ units from the mean.
+
+Let me show you the calculation for a small example, because seeing all the steps once is worth more than describing them abstractly.
 
 Five observations: 2, 4, 6, 8, 10.
 
-Step 1: Calculate the mean.
+**Step 1.** Calculate the mean.
+
 $$\overline{x} = \frac{2 + 4 + 6 + 8 + 10}{5} = \frac{30}{5} = 6$$
 
-Step 2: Calculate deviations $(x_i - \overline{x})$ for each value.
+**Step 2.** Calculate each deviation and its square.
+
 | $x_i$ | $x_i - \overline{x}$ | $(x_i - \overline{x})^2$ |
 |---|---|---|
 | 2 | −4 | 16 |
@@ -330,149 +147,127 @@ Step 2: Calculate deviations $(x_i - \overline{x})$ for each value.
 | 8 | 2 | 4 |
 | 10 | 4 | 16 |
 
-Step 3: Sum the squared deviations.
+**Step 3.** Sum the squared deviations.
+
 $$\sum (x_i - \overline{x})^2 = 16 + 4 + 0 + 4 + 16 = 40$$
 
-Step 4: Divide by *n − 1* for sample variance.
-$$s^2 = \frac{40}{5 - 1} = \frac{40}{4} = 10$$
+**Step 4.** Divide by $n - 1$ for sample variance.
 
-Step 5: Take the square root for sample standard deviation.
+$$s^2 = \frac{40}{4} = 10$$
+
+**Step 5.** Take the square root for standard deviation.
+
 $$s = \sqrt{10} \approx 3.16$$
 
-**Interpretation:** On average, each observation is about 3.16 units away from the mean (6).
+Interpretation: the typical observation in this dataset sits about 3.16 units from the mean of 6. The dataset is 2, 4, 6, 8, 10 — evenly spaced, perfectly symmetric — and a standard deviation of about 3 feels right.
 
-#### Another example: comparing two datasets
+Now compare two datasets with the same mean. Supermarket A: mean wait = 5 min, $s$ = 0.5 min. Supermarket B: mean wait = 5 min, $s$ = 2 min. At A, the wait is almost always between 4 and 6 minutes. At B, the wait can be anywhere from 1 to 9 minutes. Same average experience on paper. Very different actual experience.
 
-**Supermarket A:** Mean wait time = 5 minutes, SD = 2 minutes.
-**Supermarket B:** Mean wait time = 5 minutes, SD = 4 minutes.
+<!-- → [CHART: two overlapping bell-curve-shaped distributions on the same axis — both centered at 5 minutes, one narrow (SD=0.5) and one wide (SD=2) — with shaded regions showing where 95% of wait times fall for each; student should see visually why equal means with different SDs produce different experiences] -->
 
-Both have the same average wait. But Supermarket B's standard deviation is twice as large, meaning waits are more unpredictable. At A, you expect 5 ± 2 minutes (usually between 3 and 7). At B, waits can be as short as 1 minute or as long as 9 minutes. Same mean, very different customer experience.
+---
 
-### Percentiles and quartiles: locating a value within the distribution
+## Percentiles and quartiles
 
-A **percentile** divides ordered data into 100 equal parts. The *p*-th percentile is the value below which *p*% of the data fall.
+Every descriptive statistics course covers percentiles, and most students treat them as a bookkeeping task. They are actually a useful idea.
 
-**Quartiles** are special percentiles:
-- Q1 (first quartile) = 25th percentile
-- Q2 (second quartile) = 50th percentile = median
-- Q3 (third quartile) = 75th percentile
+The **$p$-th percentile** is the value below which $p\%$ of the data falls. The 90th percentile of test scores is the score below which 90% of students scored. If you're at the 90th percentile, you did better than 90 out of every 100 test-takers.
 
-#### Calculating percentiles from ordered data
+To calculate the $k$-th percentile in an ordered dataset of $n$ values:
 
-For the *k*-th percentile in a dataset of *n* values:
+1. Compute the index $i = \frac{k}{100}(n + 1)$.
+2. If $i$ is a whole number, the percentile is the value at position $i$.
+3. If $i$ is not a whole number, the percentile is the average of the values at positions $\lfloor i \rfloor$ and $\lceil i \rceil$ (the two positions bracketing $i$).
 
-1. Calculate the index: $i = \frac{k}{100}(n + 1)$
-2. If *i* is a whole number, the percentile is the value at position *i*.
-3. If *i* is not a whole number, round down and up to the nearest integers. Average the values at those two positions.
+Quartiles are the three percentiles that divide ordered data into four equal groups: Q1 (25th percentile), Q2 (50th percentile = median), Q3 (75th percentile). Together with the minimum and maximum, they form the **five-number summary**: (Min, Q1, Median, Q3, Max).
 
-#### A worked example — test percentiles
-
-29 test scores (ordered): 18, 21, 22, 25, 26, 27, 29, 30, 31, 33, 36, 37, 41, 42, 47, 52, 55, 57, 58, 62, 64, 67, 69, 71, 72, 73, 74, 76, 77.
+Here is an example. Twenty-nine test scores, ordered: 18, 21, 22, 25, 26, 27, 29, 30, 31, 33, 36, 37, 41, 42, 47, 52, 55, 57, 58, 62, 64, 67, 69, 71, 72, 73, 74, 76, 77.
 
 Find the 70th percentile.
 
 $$i = \frac{70}{100}(29 + 1) = 0.7 \times 30 = 21$$
 
-Position 21 (a whole number), so the 70th percentile is the 21st value: **64 years**.
+Position 21 is a whole number, so the 70th percentile is the 21st value: **64**.
 
 Find the 83rd percentile.
 
-$$i = \frac{83}{100}(29 + 1) = 0.83 \times 30 = 24.9$$
+$$i = \frac{83}{100}(30) = 24.9$$
 
-Round down to 24, round up to 25. Values are 71 (position 24) and 72 (position 25).
+Not a whole number: average positions 24 and 25.
 
 $$\text{83rd percentile} = \frac{71 + 72}{2} = 71.5$$
 
-**Interpretation:** 70% of test-takers scored 64 or below; 83% scored 71.5 or below.
-
-### Outlier detection using IQR
-
-A value is a suspected outlier if:
-$$x < Q1 - 1.5 \times \text{IQR} \quad \text{or} \quad x > Q3 + 1.5 \times \text{IQR}$$
-
-This rule uses the IQR (which ignores extremes) to set reasonable boundaries. Values beyond these boundaries are flagged for investigation.
-
-#### Real estate outlier example (revisited)
-
-From Concept 1:
-- IQR = 340,250
-- Q3 = 649,000
-
-Upper boundary = 649,000 + 1.5(340,250) = 1,159,375
-
-The $5,500,000 house exceeds this boundary, so it's a suspected outlier. The principal architect's estate? A unique property? A data error? Investigate before deciding whether to include or exclude it from analysis.
-
-### Common misconceptions
-
-**"Standard deviation is always the best measure of spread."** Not if outliers dominate. IQR is more robust.
-
-**"If std deviation is 2, almost all data fall within ± 2 of the mean."** That's true only for normally distributed data (which we cover in Chapter 6). For other distributions, the relationship is different.
-
-**"Range is useless."** For a quick summary, it's fine. "Salaries range from $35,000 to $180,000" is informative. But pair it with IQR or SD for a fuller picture.
+What this means: 83% of students scored 71.5 or below. If you scored 72, you were just above the 83rd percentile.
 
 ---
 
-## Integration — putting it together
+## Putting it together: a wealth management example
 
-A wealth management firm has tracked 100 clients' annual portfolio returns over three years. They want to describe the distribution to prospective investors.
+Abstract tools only become useful when you apply them to a concrete problem. Here is one.
 
-**Raw data (returns in percent):** −2.1, 0.5, 1.2, 1.8, 2.0, 2.3, 2.5, 2.7, 2.9, 3.1, ... (98 more values, ranging from −15.3 to 28.4).
+A wealth management firm wants to describe three years of portfolio returns to prospective investors. They have data on 100 clients, with annual returns ranging from −15.3% to +28.4%.
 
-### Step 1: Visualize with a histogram
+The first step is the histogram. Group the returns into ten equal-width intervals (width ≈ 4.5 percentage points). The histogram shows a roughly bell-shaped distribution, slightly right-skewed — most clients earned between 2% and 11%, but there is a thin tail of exceptional performers on the high end, and a thin tail of bad years on the low end.
 
-Interval width = (28.4 − (−15.3)) / 10 = 4.37 ≈ 4.5
+<!-- → [CHART: histogram of the 100 client portfolio returns — horizontal axis labeled "Annual Return (%)" with ten bars from −16% to +29%, vertical axis labeled "Number of clients"; the bar spanning 2%–6.5% tallest, thin tail visible on right; mean (6.2%) and median (6.5%) marked as vertical lines so student sees they nearly coincide in a near-symmetric distribution] -->
 
-| Return interval | Frequency |
-|---|---|
-| −16 to −11.5 | 1 |
-| −11.5 to −7 | 2 |
-| −7 to −2.5 | 3 |
-| −2.5 to 2 | 18 |
-| 2 to 6.5 | 28 |
-| 6.5 to 11 | 25 |
-| 11 to 15.5 | 15 |
-| 15.5 to 20 | 5 |
-| 20 to 24.5 | 2 |
-| 24.5 to 29 | 1 |
+Now the summary statistics:
 
-The histogram shows a roughly normal (bell-shaped) distribution, slightly left-skewed. Most returns cluster in the 2% to 11% range.
+- **Mean return:** 6.2%
+- **Median return:** 6.5%
+- **Standard deviation:** 6.1%
 
-### Step 2: Calculate center measures
+The mean and median are close — 6.2% vs. 6.5% — confirming what the histogram suggested: the distribution is nearly symmetric. No extreme outlier is distorting the mean.
 
-Mean = 6.2%
-Median = 6.5%
-Mode = 7% (appears in the 6.5–11 interval most often)
+The five-number summary: Min = −15.3%, Q1 = 2.8%, Median = 6.5%, Q3 = 10.5%, Max = 28.4%.
 
-**Insight:** Mean and median are very close (6.2% vs. 6.5%), confirming the distribution is nearly symmetrical. No extreme outlier is pulling the mean away from the median.
+IQR = $10.5 - 2.8 = 7.7$ percentage points.
 
-### Step 3: Calculate spread measures
+Outlier check:
+- Upper boundary: $10.5 + 1.5(7.7) = 22.05\%$
+- The +28.4% return exceeds this boundary. It is a suspected outlier — likely an exceptional year for one particular client, not evidence that 28% returns are typical.
 
-Range = 28.4 − (−15.3) = 43.7%
+<!-- → [IMAGE: box plot of the 100 client returns — box from Q1=2.8% to Q3=10.5%, median line at 6.5%, lower whisker extending to −15.3%, upper whisker ending at 22.05%, and the +28.4% return plotted as a lone outlier point; visually connects the five-number summary to the outlier boundary calculation just shown] -->
 
-Five-number summary:
-- Min = −15.3%
-- Q1 = 2.8%
-- Median = 6.5%
-- Q3 = 10.5%
-- Max = 28.4%
+Now you can write an honest summary: "Our 100 clients achieved a mean annual return of 6.2% with a standard deviation of 6.1%. Half earned between 2.8% and 10.5%. Most returns clustered between 2% and 11%. One client achieved 28.4% — an exceptional result. Only six of 100 clients saw losses. The distribution is nearly symmetric, with no systematic bias in either direction."
 
-IQR = 10.5 − 2.8 = 7.7%
+This is what a complete descriptive analysis looks like. Not just one number, not just "the average was 6.2%." The mean, the spread, the shape, the outliers — together they give an honest picture.
 
-Standard deviation = 6.1%
+---
 
-### Step 4: Check for outliers
+## The shape tells you what to trust
 
-Outlier boundaries:
-- Lower: 2.8 − 1.5(7.7) = −9.75%
-- Upper: 10.5 + 1.5(7.7) = 22.05%
+I want to end with the connection between shape and the measures of center and spread, because it is the frame that holds everything else together.
 
-The return of 28.4% exceeds the upper boundary. **It's a suspected outlier**—probably a exceptional year or a particular client's outperformance.
+When a distribution is symmetric: mean ≈ median. Standard deviation is the appropriate measure of spread. Report the mean and SD.
 
-### The presentation
+When a distribution is right-skewed (long tail toward high values): mean > median. The mean is pulled up by the tail; it overstates what is typical. Report the median and IQR.
 
-"Our 100 clients achieved an average annual return of 6.2%, with a standard deviation of 6.1%. Half earned between 2.8% and 10.5%. Most returns clustered between 2% and 11%, though one client achieved 28.4%—an exceptional result. Downside protection was also evident: the lowest return was −15.3%, and only 6 of 100 clients saw losses. The distribution is robust and fairly symmetrical, with no systematic bias toward gains or losses."
+When a distribution is left-skewed (long tail toward low values): mean < median. The mean is pulled down by the tail. Report the median and IQR.
 
-This summary—histogram, three center measures, IQR, SD, and outlier note—tells the full story. Prospective clients understand both the typical outcome and the range of possibilities.
+When outliers are present: same principle. The mean and standard deviation are both sensitive to outliers. Prefer median and IQR.
+
+The measures are not interchangeable. They answer different questions. Your job as a data analyst — not a data computer — is to look at the shape first, then choose the measure that answers the question honestly.
+
+The salary recruiter gave you the mean because it made her company look better. You know enough now to ask for the median.
+
+---
+
+## What would change my mind
+
+The $1.5 \times \text{IQR}$ rule for outliers is a useful convention, not a physical law. For certain types of data — particularly in fields like finance, where extreme events follow heavy-tailed distributions — this rule flags far too many "outliers," most of which are real. If I found a better rule that more accurately predicted which values were measurement errors versus genuine extremes in those contexts, I would revise my reliance on the 1.5× convention.
+
+I also don't have a fully satisfying first-principles derivation for why dividing sample variance by $n-1$ rather than $n$ corrects the bias. The algebraic argument works out cleanly — but I want to understand it the way you understand *why* a gyroscope precesses rather than just knowing that it does.
+
+---
+
+## Connections forward
+
+Chapter 3 introduces probability, and the first thing we'll do there is calculate how likely it is that a randomly selected value falls in some range. That calculation is only possible if we know the distribution — its shape, its center, its spread. The histogram you draw in Chapter 2 is the foundation.
+
+In Chapter 6, the normal distribution gives precise meaning to the standard deviation: in a bell-shaped distribution, about 68% of values fall within one standard deviation of the mean, about 95% within two, and about 99.7% within three. The standard deviation transforms from a summary statistic into a forecasting tool.
+
+In Chapter 9, hypothesis testing will ask: "If the null hypothesis were true, how unlikely is our observed sample mean?" The answer is computed using the standard deviation. Without it, you cannot do inference. Everything from Chapter 2 forward.
 
 ---
 
@@ -480,97 +275,50 @@ This summary—histogram, three center measures, IQR, SD, and outlier note—tel
 
 ### Warm-up
 
-**Exercise 2.1** *(LO: interpreting histograms).* A histogram shows the distribution of 200 college students' heights (in inches). The tallest bar spans 68–70 inches with a frequency of 45. The bar for 66–68 inches has frequency 38. What percentage of students are between 66 and 70 inches tall?
+**2.1** *(Reading a histogram.)* A histogram of 200 students' weekly study hours shows the tallest bar spanning 10–14 hours with a frequency of 52, and the next tallest spanning 14–18 hours with a frequency of 47. What percentage of students studied between 10 and 18 hours per week? What does a right-skewed shape in this histogram tell you about which center measure to report?
 
-**Exercise 2.2** *(LO: mean vs. median).* A used-car lot has 9 vehicles priced at $8,000, $8,500, $9,000, $9,200, $9,500, $10,000, $11,000, $12,000, and $35,000. Calculate the mean and median price. Which better represents a typical vehicle at this lot, and why?
+**2.2** *(Mean vs. median.)* A used-car lot has nine vehicles priced at $8,000, $8,500, $9,000, $9,200, $9,500, $10,000, $11,000, $12,000, and $35,000. Calculate the mean and median. Which better represents a typical vehicle at this lot, and why? What does the $35,000 vehicle do to the mean?
 
-**Exercise 2.3** *(LO: standard deviation intuition).* Two grocery stores have the same average wait time at checkout: 4 minutes. Store A has a standard deviation of 0.5 minutes; Store B has a standard deviation of 2 minutes. What does this difference tell you about the customer experience at each store?
+**2.3** *(Standard deviation intuition.)* Two coffee shops have the same mean daily customer count: 120. Shop A has a standard deviation of 8 customers; Shop B has a standard deviation of 40 customers. Without calculating anything, describe what the staffing implications are for each shop's manager.
 
 ### Application
 
-**Exercise 2.4** *(LO: five-number summary and box plot).* The following are commute times (in minutes) for 15 employees: 12, 14, 18, 20, 22, 25, 27, 28, 30, 32, 35, 38, 40, 42, 55. Calculate Q1, median, Q3, and IQR. Is the 55-minute commute an outlier by the 1.5 × IQR rule?
+**2.4** *(Five-number summary and outlier detection.)* Commute times in minutes for 15 employees: 12, 14, 18, 20, 22, 25, 27, 28, 30, 32, 35, 38, 40, 42, 55. Calculate Q1, the median, Q3, and IQR. Apply the $1.5 \times \text{IQR}$ rule. Is the 55-minute commute a suspected outlier? If you were a manager reviewing this dataset, what would you want to investigate about that value?
 
-**Exercise 2.5** *(LO: percentiles).* A standardized test has 10,000 test-takers. You scored in the 87th percentile. Interpret this result. Approximately how many test-takers scored at or below your score?
+**2.5** *(Percentile calculation.)* A standardized exam has 40 scores, ordered from lowest to highest. You want to find the 65th percentile. Using the index formula $i = \frac{k}{100}(n+1)$, determine which position (or positions) to use. If the values at those positions are 71 and 73, what is the 65th percentile? Interpret the result in plain language.
 
-**Exercise 2.6** *(LO: comparing distributions).* Two salespersons have the same mean monthly sales: $8,000. Person A's sales have SD = $400; Person B's have SD = $2,500. What can you infer about the reliability of each salesperson's performance?
+**2.6** *(Standard deviation step-by-step.)* Six observations: 3, 7, 7, 9, 11, 15. Calculate the mean, then compute the sample standard deviation by building the deviation table. Show each step. After computing $s$, verify the sign makes sense by checking that the dataset spans roughly mean ± $s$ to mean ± $2s$.
 
 ### Synthesis
 
-**Exercise 2.7** *(LO: interpreting shape and center).* A histogram of 500 online-class participation scores (0–100) is right-skewed, with most scores clustered between 60–85. The mean is 72 and the median is 75. Explain why the mean is lower than the median, and which measure better represents a typical student's participation.
+**2.7** *(Shape, center, and what to report.)* A hospital tracks emergency room wait times (in minutes) for 500 patients. The histogram is strongly right-skewed: most patients wait 15–40 minutes, but a few wait over 4 hours. The mean is 52 minutes; the median is 31 minutes. Explain why the mean overstates what a typical patient experiences. Which measure and which spread statistic would you report to a patient asking "how long will I wait?"
 
-**Exercise 2.8** *(LO: working with grouped data).* The following frequency table shows annual salaries (in thousands) for 50 employees in a firm:
+**2.8** *(Choosing the right tools across two groups.)* Employee satisfaction scores (1–10) at two firms: Firm A has mean = 7.2, SD = 0.7; Firm B has mean = 7.1, SD = 2.4. A journalist reports "both firms average around 7." What is missing from that summary? What does the difference in standard deviations actually mean for employees at each firm? Which firm would you rather work at if you are risk-averse about job satisfaction?
+
+**2.9** *(Full descriptive analysis from grouped data.)* Annual salaries (in thousands of dollars) for 50 employees, given as a frequency table:
 
 | Salary interval (K$) | Frequency |
 |---|---|
-| 30–40 | 5 |
-| 40–50 | 12 |
-| 50–60 | 20 |
-| 60–70 | 10 |
+| 30–40 | 6 |
+| 40–50 | 14 |
+| 50–60 | 18 |
+| 60–70 | 9 |
 | 70–80 | 3 |
 
-Estimate the mean salary using the midpoint method. Then construct a histogram. Describe the distribution's shape.
-
-**Exercise 2.9** *(LO: detecting and interpreting outliers).* A dataset of 20 rental prices (in dollars per month) has Q1 = $900, Q3 = $1,400, and one value of $3,500. Is $3,500 a suspected outlier? If so, what might you investigate?
+Estimate the mean using midpoints. Describe the distribution's shape from the table alone. Would you expect the mean or median to be higher? Why?
 
 ### Challenge
 
-**Exercise 2.10** *(LO: real-world data interpretation).* You are hired to compare employee satisfaction at two firms using survey scores (1–10). Firm A has mean = 7.2, SD = 0.8. Firm B has mean = 7.0, SD = 1.8. Both firms report "average satisfaction around 7." Why might an employee prefer Firm A despite nearly identical means? What risk does low variation at Firm A suggest?
+**2.10** *(When the IQR rule misleads.)* A financial analyst applies the $1.5 \times \text{IQR}$ outlier rule to daily stock returns for a volatile technology company over five years and flags 87 values as "outliers." A colleague points out that heavy-tailed financial returns routinely produce large values that are not errors. Explain the tension between the two positions. What would you need to know about the return distribution to decide whether those 87 values should be investigated or accepted as real?
 
-**Exercise 2.11** *(LO: synthesis — full descriptive analysis).* You collect data on the number of books read by 30 high-school students in one year: 0, 2, 3, 5, 5, 6, 7, 8, 8, 9, 10, 11, 12, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 25, 28, 30, 35, 40, 50.
+**2.11** *(Full analysis: books read per year.)* Thirty high-school students reported the number of books read in one year: 0, 2, 3, 5, 5, 6, 7, 8, 8, 9, 10, 11, 12, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 25, 28, 30, 35, 40, 50. (a) Calculate the mean and median. (b) Calculate Q1, Q3, and IQR, and identify any suspected outliers. (c) Is this distribution symmetric, right-skewed, or left-skewed? How do the mean and median support your answer? (d) Write two sentences a school administrator could use in a report — one that honestly represents typical reading, and one that a fundraiser might prefer to use. Identify which measure underlies each sentence.
 
-(a) Construct a histogram using 5 equal-width intervals.
-(b) Calculate the mean, median, and mode.
-(c) Calculate Q1, Q3, and IQR.
-(d) Identify any suspected outliers using the 1.5 × IQR rule.
-(e) Write a paragraph describing the distribution's shape and what it tells you about reading habits in this school.
-
----
-
-## Chapter summary
-
-Descriptive statistics translates raw data into insight. You now know four ways to see the shape of data: histograms, stem-and-leaf plots, box plots, and the five-number summary. You can measure the center with mean, median, or mode—and you know which to choose when outliers or skewness appears.
-
-You can quantify spread using range, IQR, variance, and standard deviation. Each serves a purpose: range is fast, IQR is robust to outliers, standard deviation is precise. You can identify unusual values using the 1.5 × IQR rule and investigate whether they are data errors, measurement anomalies, or genuine insights.
-
-Most importantly, you understand that a single number (mean or median) is never the whole story. The distribution matters. The spread matters. The shape matters. A histogram showing you where the data actually live is worth more than a mean reported without context.
-
-The salary negotiation from the cold open now makes sense. You ask for the median, not the mean. You ask for the standard deviation. You ask for a histogram. And you make a decision based on truth.
-
----
-
-## Connections forward
-
-In Chapter 3 (Probability Topics), we assign probabilities to events. We'll build on percentiles: if we know the distribution is normal and we know the mean and standard deviation, we can calculate the probability that a randomly selected value falls in any range.
-
-In Chapter 6 (The Normal Distribution), we'll discover that the mean ± 1 SD, ± 2 SD, and ± 3 SD define predictable regions of probability for bell-shaped data. That connection turns standard deviation from a summary statistic into a forecasting tool.
-
-In Chapter 9 (Hypothesis Testing), we'll use the standard deviation to build a test statistic that asks: "If the null hypothesis were true, how unlikely would our observed sample mean be?" The standard deviation is the ruler we use to measure that unlikelihood.
-
-Throughout, the shapes and measures you learned today—the histogram, the IQR, the standard deviation, the detection of outliers—appear again and again. They are the vocabulary of statistical thinking.
-
----
-
-## What would change my mind
-
-If I discovered that a different outlier-detection rule (not 1.5 × IQR) better predicted which values were measurement errors or anomalies in a large medical or scientific dataset, I would revise my emphasis. The 1.5 × IQR rule works well in practice, but it is a convention, not a law.
-
----
-
-## Still puzzling
-
-I don't yet have a fully satisfying intuition for why dividing the sample variance by *n − 1* (rather than *n*) gives a better estimate of the population variance. The mathematical argument (Bessel's correction) is sound, but I want to see it from first principles in a way that feels inevitable, not conventional.
-
----
-
-## Tags
-
-descriptive-statistics, data-visualization, measures-of-center, measures-of-spread, outliers, percentiles, histogram, box-plot, variance, standard-deviation
 ---
 
 ## LLM Exercise — Chapter 2: Descriptive Statistics (Analyze One Dataset Project)
 
-**Project:** Analyze One Real Dataset.
-**What you're building this chapter:** the descriptive-statistics section of your analysis — visualizations, summary statistics, outlier identification.
+**Project:** Analyze One Real Dataset.  
+**What you're building this chapter:** the descriptive-statistics section of your analysis — visualizations, summary statistics, outlier identification.  
 **Tool:** **Claude Code** is genuinely useful here. Python with pandas + matplotlib + seaborn produces real charts.
 
 ---
@@ -646,12 +394,11 @@ what hypothesis tests will be most interesting in Chapters 9-13.
 
 **Preview of next chapter:** Chapter 3 covers probability. You'll compute conditional probabilities and contingency tables for categorical variables in your dataset.
 
-
 ---
 
 ## 🕰️ AI Wayback Machine
 
-**John Tukey** was invented exploratory data analysis — the framework underlying every modern look at a dataset.
+**John Tukey** invented exploratory data analysis — the framework underlying every modern look at a dataset.
 
 **Run this:**
 
