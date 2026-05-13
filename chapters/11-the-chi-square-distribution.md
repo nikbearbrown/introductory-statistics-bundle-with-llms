@@ -1,318 +1,212 @@
 # Chapter 11 — The Chi-Square Distribution
-
-## Three title options
-
-1. **Counting Categories: When Data Don't Come in Bell Curves**
-2. **Do Patterns Match Reality? The Chi-Square Test for Counts**
-3. **Measuring Fit: From Mendel's Peas to A/B Test Results**
+*How far from expectation is too far to believe?*
 
 ---
 
-## TL;DR
+Gregor Mendel, in his monastery garden in Brno in the 1860s, was crossing pea plants and counting their offspring. His theory said that when you cross two heterozygous yellow plants, the offspring should appear in a 3:1 ratio — three yellow for every one green. In 1,000 offspring, theory predicts roughly 750 yellow and 250 green.
 
-The chi-square distribution measures how far observed data stray from what theory predicts. Unlike z or t tests (which work with measurements), chi-square tests work with counts in categories. Three applications: goodness-of-fit (do my data fit this distribution?), independence (are these two factors really unrelated?), and single-variance tests. All three ask the same core question: observed minus expected, squared and summed—how large does that sum have to be before we stop believing the null?
+He planted. He counted. He got 882 yellow and 118 green.
 
----
+That's not 750 and 250. So — does this mean the theory is wrong?
 
-## Cold open: Mendel's pea colors
+Or is 882 close *enough* to 750, given the noise of real seeds growing in real soil tended by real monks? The question isn't whether the numbers match exactly. They never match exactly. The question is: how far from expectation can the data be before the deviation is too large to attribute to chance?
 
-Gregor Mendel, in his Brno monastery garden in the 1860s, was cross-breeding pea plants and tracking the colors of the offspring. His theory said that when you cross heterozygous yellow with heterozygous yellow plants, the offspring should appear in a 3:1 ratio—three yellow for every one green. Theory said ratio 3:1. The math said that in 1,000 offspring you'd expect roughly 750 yellow and 250 green.
-
-He planted. He counted. He got 882 yellow and 118 green out of 1,000. That's not 3:1. Does that mean his theory was wrong?
-
-Or is 882 yellow close *enough* to 750, given the noise of real plants and real gardens?
-
-You need a way to ask: *How far from expectation can the data be before I stop believing the theory?* That tool is the chi-square test.
-
-### Learning objectives
-
-By the end of this chapter you will be able to:
-
-- **Calculate** the chi-square test statistic from a table of observed and expected counts.
-- **Determine degrees of freedom** for goodness-of-fit, independence, and variance tests.
-- **Conduct a goodness-of-fit test** to ask whether data fit a proposed distribution.
-- **Conduct a test of independence** to ask whether two categorical variables are truly unrelated.
-- **Understand the mechanics** of why chi-square is always right-tailed and always nonnegative.
-- **Recognize when chi-square breaks down** (expected counts too small, confusing correlation with causation).
-
-### Prerequisites
-
-Comfort with hypothesis testing (null, alternative, test statistic, p-value). Knowledge of contingency tables (two-way tables with row and column totals). The normal distribution, just for context. You've seen the t-distribution and z-distribution; this is the third major distribution you'll work with.
-
-### Why this chapter matters
-
-Until now, every test you've used assumed you were measuring something: heights, test scores, salaries. Those measurements form distributions. The t-test asked whether two means differ. The z-test asked whether a proportion differs from expectation.
-
-But many real questions don't fit that mold. Does lottery-ticket frequency match a uniform distribution? Does movie preference differ by age group? Does the variance of a manufacturing process stay within tolerance? None of these start with measurements. They start with counts: how many people in this category, how many in that one.
-
-Chi-square is the test for counts.
+That is the question chi-square was built to answer.
 
 ---
 
-## Concept 1 — The chi-square distribution: Where it comes from
+## Where chi-square comes from
 
-A distribution is always the sum of something. The normal distribution—bell curve—is what you get when you add up many small, independent, random contributions. The t-distribution is the ratio of a sample mean to its estimated standard error. The chi-square distribution is the sum of *squared, standardized* deviations.
+Every distribution is the sum of something. The normal distribution emerges when you add many small independent random contributions. The t-distribution is the ratio of a sample mean to its estimated standard error. The chi-square distribution is the sum of *squared, standardized* deviations.
 
-Here's the formal statement. If you have $k$ independent standard normal random variables—each following $N(0,1)$, each squared—and you add them up, the sum follows a chi-square distribution with $k$ degrees of freedom.
+Here is the exact statement. Take $k$ independent standard normal random variables — each drawn from $N(0,1)$ — and square each one and add them up:
 
 $$\chi^2 = Z_1^2 + Z_2^2 + \cdots + Z_k^2$$
 
-where each $Z_i \sim N(0,1)$ independently.
+The resulting sum follows a chi-square distribution with $k$ degrees of freedom.
 
-You don't need to generate $k$ normal variables to use chi-square. The formula is machinery. The point is this: chi-square measures accumulated squared deviations. When observed data fall far from expected, those deviations get large, their squares get larger, and the sum grows.
+You won't generate $k$ normal variables every time you run a chi-square test. The formula is machinery. The conceptual point is this: chi-square measures accumulated squared deviations. When observed data fall far from expected, those deviations grow, their squares grow faster, and the sum grows fastest. A big chi-square means the observed pattern is hard to explain by chance alone.
 
-### The shape of chi-square
+The shape of the chi-square curve is nothing like a bell. It is right-skewed — bunched near zero, with a long tail reaching toward infinity. When $df = 1$, the curve is most sharply skewed, most of its mass sitting close to zero. As $df$ increases, the curve spreads and flattens, and by around $df = 90$ it is nearly indistinguishable from a normal distribution. For any $df$, the mean of the distribution is $\mu = df$ and the standard deviation is $\sigma = \sqrt{2 \cdot df}$.
 
-The chi-square curve looks nothing like a bell. It's **skewed to the right**—it starts near zero, rises to a peak, then has a long tail reaching toward infinity. The shape depends on the degrees of freedom.
+That mean gives you immediate intuition. If you are running a test with 6 degrees of freedom, the average chi-square value — under a true null hypothesis — is 6. A test statistic of 7 is barely above average. A test statistic of 20 is well into the tail and suggests the null hypothesis is in trouble.
 
-- When $df = 1$, the curve is most skewed, bunched near zero.
-- When $df = 2$, it looks almost exponential.
-- As $df$ increases, the curve becomes more symmetric and spreads out.
-- When $df > 90$, it approximates the normal distribution. At $df = 1000$, you can barely tell the difference from a bell curve.
+Two properties follow from the structure. First, chi-square is always nonnegative — it's a sum of squares, and squares cannot be negative. Second, chi-square tests are always right-tailed. You reject the null when the test statistic is *large*, because large means observed deviations from expected are large. There is no left-tailed chi-square test.
 
-**Key property:** The chi-square distribution is always nonnegative. The test statistic can never be negative because it's a sum of squared terms. This means chi-square tests are *always right-tailed*. You reject the null when the test statistic is unusually *large*, not unusually small.
-
-### Degrees of freedom in chi-square
-
-The degrees of freedom in chi-square tell you how many constraints the data face. Suppose you're sorting 100 people into three categories: Red, Blue, Green. You have 100 - 1 = 99 pieces of information. But once you know how many are Red and how many are Blue, the Green count is determined (100 minus the other two). So you have only 2 degrees of freedom.
-
-More generally: if you have $k$ categories, $df = k - 1$.
-
-For two-way tables (contingency tables), the formula is different: $df = (\text{rows} - 1) \times (\text{columns} - 1)$. You lose one degree of freedom for each row total and each column total that's fixed.
-
-### The mean and standard deviation of chi-square
-
-A chi-square distribution with $k$ degrees of freedom has population mean $\mu = k$ and standard deviation $\sigma = \sqrt{2k}$.
-
-This gives you intuition. If you're testing whether data fit a distribution and you have 20 categories, the mean of the chi-square distribution is 20. If you calculate a test statistic of 22, you're only slightly above the mean—probably not evidence against the null. If you calculate 50, you're well into the tail.
-
-### Etymology and notation
-
-The name *chi-square* comes from the Greek letter $\chi$ (chi, pronounced "kye"), which looks vaguely like a squared variable. The notation is $X^2 \sim \chi_{df}^2$, read "X squared follows chi-square with $df$ degrees of freedom." The square in the name and notation refers both to the fact that you're squaring deviations and to the shape of the curve.
-
-### Worked example — Recognizing when chi-square applies
-
-A lottery claims its drawing machine is fair: each of six numbers should come up equally often. You run the machine 6,000 times. You expect each number to appear 1,000 times. You observe: 980, 1,010, 1,020, 995, 990, 1,005. Are these results consistent with a fair machine?
-
-**What distribution do you need?** Chi-square. You have counts (observed) and expected counts. You want to know whether the observed counts deviate too far from expected.
-
-**How many degrees of freedom?** Six categories (the six numbers), so $df = 6 - 1 = 5$.
-
-**What would you calculate?** The chi-square test statistic using the formula in Concept 2.
-
-### Common misconceptions
-
-**"Chi-square is the same as t-test, just for categories."** Not quite. The t-test assumes the underlying population is normal and tests means. Chi-square tests counts against expectation. They're answering different questions.
-
-**"If my chi-square statistic is close to the degrees of freedom, the null is true."** No. A statistic close to $df$ is not strong evidence either way—it's in the middle of the distribution. You need a p-value to decide.
-
-**"Chi-square is always right-tailed."** Yes, because of the squared deviations. But you should still check the p-value. Some software lets you set left-tailed options; those are always wrong for chi-square.
+<!-- → [CHART: overlapping chi-square density curves for df=1, df=4, df=10, and df=30 on the same axes — horizontal axis from 0 to 40, vertical axis density; df=1 is most sharply bunched near zero; df=4 has a visible peak around 2; df=10 peaks around 8; df=30 is nearly symmetric and bell-like; each curve labeled; vertical dashed line at x=df for each curve showing mean=df; caption: "The distribution shifts right and becomes more symmetric as degrees of freedom increase"] -->
 
 ---
 
-## Concept 2 — The goodness-of-fit test
+## The test statistic
 
-A goodness-of-fit test asks: *Do my data fit this proposed distribution?* You have a theory about what should happen. You have actual data about what did happen. The test measures whether the difference is noise or genuine disagreement.
-
-### The recipe
-
-The test statistic is:
+All chi-square tests share one formula for the test statistic:
 
 $$\chi^2 = \sum \frac{(O - E)^2}{E}$$
 
-where $O$ is the observed count in each category, $E$ is the expected count, and you sum over all categories.
+$O$ is the observed count in a category. $E$ is the expected count under the null hypothesis. You compute the squared deviation, divide by the expected count to standardize it, and sum across all categories.
 
-The formula is intuitive. $(O - E)$ is the deviation from expectation. You square it so big deviations get penalized hard. You divide by $E$ to standardize—a deviation of 10 from an expected count of 100 is noise, but a deviation of 10 from an expected count of 5 is glaring. Sum across all categories and you have a single number measuring total misfit.
+Why divide by $E$? Because the same absolute deviation means different things at different scales. If you expect 1,000 and observe 1,010, that's a deviation of 10 out of 1,000 — about 1%, well within normal fluctuation. If you expect 5 and observe 15, that's also a deviation of 10 — but it's twice the expected value, a complete breakdown of the model. Dividing by $E$ makes these two situations register differently in the statistic, as they should.
 
-### The hypotheses
+Why square the deviation? Two reasons. First, squaring makes every term nonnegative, so overestimates and underestimates don't cancel. Second, squaring penalizes large deviations more harshly than small ones — a deviation of 20 contributes four times as much to the statistic as a deviation of 10. The test is sensitive to big misses.
 
-The null hypothesis is always: *The data fit the proposed distribution* (or in words, the frequencies match expectation, or the categorical distribution matches the theory).
+One assumption underlies the whole procedure: the expected count in each cell must be at least 5. When expected counts are very small, the chi-square approximation breaks down. The test statistic no longer follows the chi-square distribution, and the p-value is unreliable. When you encounter small expected counts, the remedy is to combine categories until each expected count clears 5.
 
-The alternative is: *The data do not fit the proposed distribution.*
-
-Write these in words unless the problem specifically asks for equations.
-
-### The procedure, step by step
-
-1. **Set the significance level** ($\alpha$).
-2. **State the hypotheses** in words.
-3. **Verify assumptions**: Each expected count must be at least 5. If some are below 5, combine categories until they're all at least 5. This is not optional—the test breaks down otherwise.
-4. **Calculate expected counts** from the proposed distribution.
-5. **Build a calculation table** with columns: category, $O$, $E$, $(O - E)$, $(O - E)^2$, $\frac{(O - E)^2}{E}$.
-6. **Sum the last column** to get the test statistic.
-7. **Find degrees of freedom**: $df = (\text{number of categories}) - 1$.
-8. **Look up the critical value** in the chi-square table or use software to find the p-value.
-9. **Make a decision** and write a conclusion.
-
-### Worked example — Are the days equally absent?
-
-Managers want to know whether employees call in sick equally throughout the week, or whether certain days are more popular for absence. They survey 60 managers: which day of the week saw the most absences at their workplace?
-
-Results: Monday 15, Tuesday 12, Wednesday 9, Thursday 9, Friday 15. (Total: 60.)
-
-**Hypotheses:**
-- $H_0$: Absences are equally distributed across the five weekdays.
-- $H_a$: Absences are not equally distributed.
-
-**Expected counts:** If absences are uniform, we'd expect $60 / 5 = 12$ on each day.
-
-**Calculation table:**
-
-| Day | $O$ | $E$ | $O - E$ | $(O - E)^2$ | $\frac{(O - E)^2}{E}$ |
-|---|---|---|---|---|---|
-| Monday | 15 | 12 | 3 | 9 | 0.75 |
-| Tuesday | 12 | 12 | 0 | 0 | 0.00 |
-| Wednesday | 9 | 12 | −3 | 9 | 0.75 |
-| Thursday | 9 | 12 | −3 | 9 | 0.75 |
-| Friday | 15 | 12 | 3 | 9 | 0.75 |
-| | | | | | **3.00** |
-
-$\chi^2 = 3.00$, $df = 5 - 1 = 4$.
-
-**Critical value** at $\alpha = 0.05$ with $df = 4$: 9.488.
-
-**Decision:** $3.00 < 9.488$, so we do not reject $H_0$.
-
-**Conclusion:** At the 5% significance level, there is insufficient evidence to conclude that absences are unequally distributed across days. The observed pattern is consistent with a uniform distribution. Monday and Friday happened to see more absences by chance.
-
-### A scale shift: From one test to many
-
-A single goodness-of-fit test compares one sample to one theoretical distribution. But the same statistic, summed across many studies, tells a bigger story.
-
-Imagine ten researchers each conduct a drug trial. Each tests whether the drug is better than placebo using a chi-square goodness-of-fit for adverse events: observed frequencies match the known rate (the distribution from prior trials).
-
-Researcher 1 gets $\chi^2 = 4.1$, p-value 0.25. Not significant.
-Researcher 2 gets $\chi^2 = 3.8$, p-value 0.28. Not significant.
-... and so on.
-
-But when you aggregate those results—when you ask, "Across all ten studies, is the pattern of adverse events consistent?"—the individual chi-squares combine, the degrees of freedom add, and the aggregate tells you whether a subtle effect is real across many replications.
-
-### Common misconceptions
-
-**"If expected count is below 5, I can still run the test."** No. The test relies on the normal approximation to the multinomial distribution, which breaks down when counts are small. Combine categories, don't ignore it.
-
-**"High chi-square always means the null is false."** High chi-square means observed deviates from expected. But if your expected distribution was wrong to begin with, high chi-square just means the world didn't cooperate. Always sanity-check your hypothesis.
-
-**"I can use goodness-of-fit to test any distribution."** You can, but it only tests the distribution you specified. You need the right expected distribution. If you're testing normality, use normal expected values, not uniform. Get the theory right.
+<!-- → [INFOGRAPHIC: two-column diagram labeled "Why E < 5 breaks the test" — left column shows a bar chart of observed counts where one bar is 1 and the chi-square formula term (O-E)²/E contributes an outsized value; right column shows the same test after combining two small-count categories into one, all expected counts now ≥5, the combined bar properly sized; caption explains the approximation requires adequate probability mass in each bin] -->
 
 ---
 
-## Concept 3 — The test of independence
+## Goodness of fit: Does the theory match the data?
 
-Independence in statistics means: knowing the value of one variable tells you nothing about the other. A test of independence asks whether two categorical factors are truly unrelated or whether they're associated.
+The first application is the one Mendel needed. You have a theory that predicts a particular distribution across categories. You collect data. Does the observed distribution fit the theoretical one, or are the deviations too large to be noise?
 
-### The setup
+The null hypothesis is always the same structure: *the data fit the proposed distribution*. The alternative: *they don't*. You compute expected counts from the theory, compare them to the observed counts using the formula above, and ask whether the resulting statistic is unusually large.
 
-You have data in a contingency table (two-way table). Rows represent one categorical variable (e.g., age group), columns represent another (e.g., favorite movie genre). Each cell contains a count.
+The degrees of freedom for a goodness-of-fit test: $df = k - 1$, where $k$ is the number of categories. Why $k - 1$? Because if you know the counts in $k - 1$ categories and you know the total, the last count is determined. It's not free. You lose one degree of freedom for that constraint.
 
-The null hypothesis is: *The two factors are independent.* If they're independent, you can calculate expected frequencies using the law of probability: $P(A \text{ and } B) = P(A) \times P(B)$.
+Let me work through a clean example. Company managers want to know whether employees call in sick equally often across the five days of the work week. They survey 60 managers and record which weekday saw the most absences at their workplace: Monday 15, Tuesday 12, Wednesday 9, Thursday 9, Friday 15.
 
-### The expected frequencies
+Under the null hypothesis — absences distributed uniformly — each day should account for one-fifth of 60 absences: $E = 12$ for every day.
 
-If factors are independent, the expected count in cell $(i, j)$ is:
+| Day | $O$ | $E$ | $(O-E)^2/E$ |
+|---|---|---|---|
+| Monday | 15 | 12 | 0.75 |
+| Tuesday | 12 | 12 | 0.00 |
+| Wednesday | 9 | 12 | 0.75 |
+| Thursday | 9 | 12 | 0.75 |
+| Friday | 15 | 12 | 0.75 |
+
+$\chi^2 = 3.00$, with $df = 4$.
+
+At $\alpha = 0.05$ with 4 degrees of freedom, the critical value from a chi-square table is 9.488. Our test statistic is 3.00, well below that. We do not reject the null. The pattern — Monday and Friday slightly higher — is consistent with what random variation would produce. There's no evidence that some days genuinely attract more absences than others.
+
+Now notice what happened. The observed counts weren't equal. They never will be. The question was never "are the counts exactly equal?" — that's a question with an obvious answer. The question was: is the inequality we see bigger than what chance alone would generate? The answer here is no.
+
+Now return to Mendel. He observed 882 yellow and 118 green from 1,000 offspring. Theory predicts 750 and 250.
+
+$$\chi^2 = \frac{(882-750)^2}{750} + \frac{(118-250)^2}{250} = \frac{17424}{750} + \frac{17424}{250} = 23.23 + 69.70 = 92.93$$
+
+With $df = 1$, the critical value at $\alpha = 0.05$ is 3.841. The statistic 92.93 is enormous. Mendel's data deviate dramatically from the 3:1 prediction. His theory, as stated, does not fit this particular set of counts.
+
+This is historically interesting because Mendel's published data are notoriously too clean — subsequent analysis by Ronald Fisher suggested the data may have been adjusted to better match the theory. The chi-square test, in this light, isn't just about whether a theory fits the data; it can also ask whether data are suspiciously well-fitted, which is a different kind of anomaly.
+
+<!-- → [IMAGE: chi-square distribution curve for df=1, horizontal axis 0 to 100; critical value at 3.841 marked with a vertical dashed line and labeled "α=0.05 boundary"; shaded rejection region to the right; a marker at χ²=92.93 deep in the tail labeled "Mendel's result"; the visual distance between the critical value and Mendel's statistic illustrates how dramatically the data deviate from the 3:1 theory] -->
+
+---
+
+## Independence: Are these two things actually related?
+
+The second application asks a different question. You have two categorical variables measured on the same sample. You want to know whether they're associated — whether knowing the value of one tells you something about the likely value of the other — or whether they're genuinely independent.
+
+The setup is a contingency table. Rows represent one variable, columns the other, and each cell contains a count.
+
+Under the null hypothesis of independence, the probability of landing in cell $(i,j)$ is the product of the probabilities of the two categories separately: $P(A_i \text{ and } B_j) = P(A_i) \times P(B_j)$. This is the definition of statistical independence. From this, you can compute what the cell counts *should* be if the variables are truly independent:
 
 $$E_{ij} = \frac{(\text{row total}_i) \times (\text{column total}_j)}{\text{grand total}}$$
 
-This formula says: the proportion of the grand total that goes in this cell equals the row proportion times the column proportion.
+The test statistic is the same formula — $\sum (O-E)^2/E$ — summed over every cell. The degrees of freedom change:
 
-### The test statistic and degrees of freedom
+$$df = (\text{rows} - 1) \times (\text{columns} - 1)$$
 
-The test statistic is the same formula as goodness-of-fit:
+Why this formula? In a table with $r$ rows and $c$ columns, the row totals and column totals are fixed by the data. Once you fill in $(r-1) \times (c-1)$ cells, all remaining cells are determined by subtraction. Those are the cells that are genuinely free to vary.
 
-$$\chi^2 = \sum \sum \frac{(O_{ij} - E_{ij})^2}{E_{ij}}$$
+<!-- → [IMAGE: annotated 3×3 contingency table skeleton — row and column totals shown in bold; the (r-1)×(c-1) = 4 "free" cells shaded in one color; the remaining 5 cells (last row and last column) shaded in another color with arrows and labels showing "determined by row/column constraints"; caption: "Only the shaded free cells contribute independent information — the rest are forced by the margins"] -->
 
-You sum over all rows and columns.
+A survey of 400 moviegoers classified by age group and favorite genre. Three age groups (18–30, 31–50, 50+), three genres (Action, Comedy, Drama). Does preference depend on age?
 
-The degrees of freedom: $df = (\text{rows} - 1) \times (\text{columns} - 1)$.
-
-For a 2×3 table (two rows, three columns): $df = (2 - 1) \times (3 - 1) = 2$.
-
-### A worked example — Movie preference by age
-
-A survey of 400 moviegoers asked their age group and favorite genre. Is preference independent of age, or do older and younger viewers like different things?
-
-**Observed data:**
-
-| Age | Action | Comedy | Drama | **Row total** |
+| | Action | Comedy | Drama | Total |
 |---|---|---|---|---|
-| 18–30 | 40 | 50 | 35 | **125** |
-| 31–50 | 45 | 60 | 70 | **175** |
-| 50+ | 30 | 40 | 30 | **100** |
-| **Col total** | **115** | **150** | **135** | **400** |
+| 18–30 | 40 | 50 | 35 | 125 |
+| 31–50 | 45 | 60 | 70 | 175 |
+| 50+ | 30 | 40 | 30 | 100 |
+| Total | 115 | 150 | 135 | 400 |
 
-**Hypotheses:**
-- $H_0$: Movie preference is independent of age group.
-- $H_a$: Movie preference and age group are dependent.
+Expected count for cell (18–30, Action): $\frac{125 \times 115}{400} = 35.94$.
 
-**Expected counts:** Using the formula.
+You compute expected counts for all nine cells, then calculate $\chi^2 = \sum (O-E)^2/E$ across all nine. Suppose you get $\chi^2 = 8.7$.
 
-For Age 18–30, Action: $E = \frac{125 \times 115}{400} = 35.94$
-For Age 18–30, Comedy: $E = \frac{125 \times 150}{400} = 46.88$
-For Age 18–30, Drama: $E = \frac{125 \times 135}{400} = 42.19$
+$df = (3-1)(3-1) = 4$. Critical value at $\alpha = 0.05$: 9.488.
 
-And so on for each cell. (I'll spare you the full table.)
+$8.7 < 9.488$. We do not reject the null. The data are consistent with movie preference being independent of age group.
 
-Once you have all expected counts, calculate $\chi^2$ the same way: sum $(O - E)^2 / E$ across all six cells.
+But suppose you got $\chi^2 = 14.3$. Now $14.3 > 9.488$ and we reject the null. We conclude that preference and age are associated. And this is where a critical point arrives: association is not causation. The test tells you the variables are not independent. It does not tell you *why*. 
 
-Suppose you get $\chi^2 = 8.7$.
+Maybe age affects taste directly — people genuinely prefer different things at different life stages. Or maybe it's generational — people who grew up watching certain movies in their formative years have permanent preferences shaped by that history. Or maybe it's economic — older moviegoers can afford drama tickets, which are more expensive in some markets. Or maybe it's selection bias — the survey was conducted at a multiplex whose customers skew young, and older respondents were recruited differently.
 
-$df = (3 - 1) \times (3 - 1) = 4$.
-
-Critical value at $\alpha = 0.05$: 9.488.
-
-**Decision:** $8.7 < 9.488$, so we do not reject $H_0$.
-
-**Conclusion:** There is insufficient evidence that movie preference depends on age group. The data are consistent with independence.
-
-### A critical scale shift: One table to many studies
-
-A single test of independence answers one question: Are these two factors related in this dataset?
-
-But as replication advances statistics, researchers ask: Across many studies in different countries, with different samples, is the relationship consistent?
-
-When you aggregate chi-squares across independent studies, the individual test statistics add, degrees of freedom add, and the combined result tells you whether the association is robust. One study might find $\chi^2 = 6$ (not significant at $\alpha = 0.05$). Another finds $\chi^2 = 7$. Together, $\chi^2 = 13$ with $df = 2 + 2 = 4$, which *is* significant. Replication strengthens what individual noise obscures.
-
-### The major pitfall: Correlation is not causation
-
-A test of independence tells you whether two variables are *associated*—whether knowing one helps predict the other. It does **not** tell you why they're associated.
-
-If you find that age and movie preference are dependent, that could mean: (1) age actually affects taste, or (2) generation cohorts grew up with different movies and that shaped permanent preference, or (3) health or economics (older people spend less on movies, skewing toward home viewing), or (4) selection bias (respondents of different ages showed up at different times).
-
-The test finds association. It does not prove causation. You must think about the mechanism.
-
-### Common misconceptions
-
-**"Independence means the counts are equal."** No. Independence means the *ratio* of counts in one row matches the ratio in every other row. A 3×3 contingency table can be independent with counts like 10, 20, 30 in one row and 15, 30, 45 in another. They have different marginals, but the same structure.
-
-**"If p-value is large, the variables are independent."** Large p-value means insufficient evidence against independence. That's not the same as proving independence. Maybe your sample is too small.
-
-**"Expected count below 5 is okay if I have a lot of cells."** No. Each cell's expected count must be at least 5. If too many cells fail, combine categories or get more data.
+The test finds association. It cannot distinguish among these explanations. That work requires thinking about mechanism, and thinking about mechanism is science, not statistics.
 
 ---
 
-## Integration: From categorical tests to inference
+## The lottery: Putting it together
 
-Return to the lottery from the cold open. You want to know: Is the machine fair?
+A lottery commission wants to verify that their drawing machine is fair. Each of six numbers should appear equally often — a uniform distribution over six outcomes. They run 6,000 draws and observe: 980, 1,010, 1,020, 995, 990, 1,005.
 
-Theory says each of six numbers appears equally often—a uniform distribution over the six outcomes.
+Expected count for each number: $6000/6 = 1000$.
 
-You run 6,000 trials and observe: 980, 1,010, 1,020, 995, 990, 1,005.
+$$\chi^2 = \frac{(980-1000)^2}{1000} + \frac{(1010-1000)^2}{1000} + \frac{(1020-1000)^2}{1000} + \frac{(995-1000)^2}{1000} + \frac{(990-1000)^2}{1000} + \frac{(1005-1000)^2}{1000}$$
 
-Expected for each: 1,000.
+$$= \frac{400 + 100 + 400 + 25 + 100 + 25}{1000} = \frac{1050}{1000} = 1.05$$
 
-Chi-square test:
+$df = 5$. Critical value at $\alpha = 0.05$: 11.07.
 
-$$\chi^2 = \frac{(980-1000)^2}{1000} + \frac{(1010-1000)^2}{1000} + \cdots + \frac{(1005-1000)^2}{1000} = \frac{400 + 100 + 400 + 25 + 100 + 25}{1000} = 1.05$$
+$1.05 \ll 11.07$. We do not reject the null. The machine is producing results consistent with fair draws.
 
-$df = 6 - 1 = 5$. Critical value at $\alpha = 0.05$ is 11.07.
+Now here's a thing worth noticing. The mean of a chi-square distribution with 5 degrees of freedom is 5. Our test statistic of 1.05 is well *below* the mean. The fit is actually suspiciously good. The 6,000 draws produced results very close to the theoretical distribution — almost too close.
 
-$1.05 < 11.07$, so we do not reject the null. The observed counts are consistent with a fair machine. The deviations you see are what you'd expect from random variation.
+This is the kind of observation that caught Fisher's attention when he examined Mendel's data. A chi-square statistic that's extremely small — much less than its degrees of freedom — suggests the data may have been adjusted or selected for agreement with the theory. Real data is messy; it almost always produces some deviation. Data that's too clean is its own kind of anomaly.
 
-Now imagine you run a different test: You categorize lottery players by gender and check whether male and female players have the same pattern of number preferences (numbers 1–3 versus 4–6). You get a 2×2 contingency table. Does preference depend on gender?
+<!-- → [CHART: chi-square distribution for df=5 — full curve shown; left tail region shaded for "suspiciously small" values below the 5th percentile (≈1.15); right tail region shaded for "standard rejection" values above the 95th percentile (=11.07); lottery result at χ²=1.05 marked in the left shaded region; caption: "Both extremes are informative — very large statistics suggest bad fit; very small statistics suggest suspiciously good fit"] -->
 
-Chi-square test of independence answers that. Same machinery, different question.
+---
 
-Both tests ask: *How far from expectation can the data be before I stop believing the theory?* The answer is always measured in chi-squares.
+## One distribution, three questions
+
+The machinery is the same in every application: compute expected counts from the null hypothesis, compute $(O-E)^2/E$ for each cell, sum, compare to the chi-square distribution at the appropriate degrees of freedom.
+
+The questions differ.
+
+Goodness-of-fit asks: does a single categorical variable follow a specific proposed distribution? You specify the expected proportions, convert them to expected counts, and test whether the data fit.
+
+Independence asks: are two categorical variables unrelated? You estimate expected counts from the marginal totals, assuming independence, and test whether the actual cell counts are consistent with that assumption.
+
+A third application exists — testing whether a single population variance equals a specific claimed value — but the structure is the same: squared deviations from a model, summed and compared to the chi-square distribution.
+
+The common thread is that all three tests start with *counts* and ask whether those counts are consistent with a theory. This is the fundamental difference between chi-square and everything you've done before. The z-test and t-test work with measurements — heights, incomes, test scores — and ask whether means differ. Chi-square works with counts in categories and asks whether the distribution of those counts matches a model.
+
+When you have measurements, use t or z. When you have counts, use chi-square. The distinction is not about sample size or precision — it's about what the data *are*.
+
+---
+
+## What chi-square doesn't tell you
+
+A significant chi-square test tells you the observed counts are inconsistent with the null hypothesis at your chosen significance level. It does not tell you which cells are causing the problem. It does not tell you the direction of any association. It does not tell you the size of the effect — a test statistic of 20 in a 2×3 table with 2 degrees of freedom is significant, but 20 in the same table could arise from a strong association or a weak one depending on sample size.
+
+For the independence test, effect size is often quantified by Cramér's V:
+
+$$V = \sqrt{\frac{\chi^2}{n \cdot \min(r-1, c-1)}}$$
+
+where $n$ is the total sample size and $\min(r-1, c-1)$ is the smaller of rows-minus-1 and columns-minus-1. $V$ ranges from 0 (no association) to 1 (perfect association). A chi-square test with a tiny p-value but a small $V$ tells you the association is real but weak — which is what happens when sample sizes are enormous and you can detect very small effects. Always report both.
+
+<!-- → [TABLE: two-column reference table for Cramér's V interpretation — columns: V range, Strength of association; rows: V < 0.10 / Negligible, 0.10–0.30 / Moderate, 0.30–0.50 / Strong, V > 0.50 / Very strong; second column adds a note that p-value tells you the association is real, V tells you whether it matters practically; clear reference for the reporting discipline introduced in this section] -->
+
+And the caution about causation deserves repeating. A chi-square test of independence that rejects the null tells you two variables are associated. It does not tell you why. The relationship could be direct, it could be mediated by a third variable, it could be an artifact of how the sample was collected. The test is the beginning of the analysis, not the end of it.
+
+---
+
+## What would change my mind
+
+The conventional rule that expected counts must be at least 5 is widely applied but imperfectly justified. Different statisticians cite different thresholds — some say 3, some say 5, some say 10 in certain configurations. The threshold depends on the shape of the underlying distribution and the specific test structure in ways that aren't fully captured by a single cutoff. If a careful simulation study showed that the test is reliable at expected counts of 3 or even 2 in specific configurations, I would revise my practice accordingly. For now, 5 is the conventional floor because it's conservative and well-supported by the textbook literature.
+
+The deeper uncertainty: when exactly does a suspiciously small chi-square (suggesting data are too clean) become grounds for concern versus grounds for celebration? Fisher's analysis of Mendel is the famous case, but the threshold for "too good to be true" has no clean formula. This would benefit from explicit decision criteria.
+
+---
+
+## Connections forward
+
+Chapter 12 introduces the F-distribution and ANOVA — a test for whether three or more group means differ from each other. Chi-square tested categorical counts; ANOVA tests continuous measurements across categorical groups. Both compare observed variation to what chance would produce. Both are right-tailed. Both ask a version of the same question: is the pattern we see too large to be noise?
+
+Chapter 13 covers linear regression, which quantifies association between two continuous variables. Chi-square quantifies association in contingency tables. Both tools are doing the same conceptual work — measuring how much knowing one variable helps you predict another — but through different mathematical machinery suited to different data types.
+
+And if you encounter Bayesian methods later, you'll see chi-square again as a tool for model criticism: propose a model, generate the expected data it predicts, compare to actual data, and measure the discrepancy. The formula and the logic are identical to what you've learned here. The philosophical framing is different; the machinery is the same.
 
 ---
 
@@ -320,90 +214,47 @@ Both tests ask: *How far from expectation can the data be before I stop believin
 
 ### Warm-up
 
-**Exercise 11.1** *(LO: degrees of freedom).* A goodness-of-fit test has eight categories. (a) How many degrees of freedom? (b) If the test statistic is $\chi^2 = 14.2$, is it significant at $\alpha = 0.05$?
+**11.1** *(Chi-square distribution properties.)* (a) A chi-square distribution has $df = 8$. What is its mean? What is its standard deviation? (b) A test produces a statistic of $\chi^2 = 9.5$ with $df = 8$. Is this above or below the mean of the distribution? Does this give you reason to reject the null? (c) Why can a chi-square statistic never be negative?
 
-**Exercise 11.2** *(LO: recognize distribution).* For each scenario, state whether you'd use chi-square goodness-of-fit, chi-square independence, or a different test.
+**11.2** *(Recognizing the right test.)* For each of the following, state whether you would use a chi-square goodness-of-fit test, a chi-square test of independence, or neither (and name what you would use instead). (a) A coin is flipped 200 times. Are the frequencies of heads and tails consistent with a fair coin? (b) A survey of 500 students records their major and whether they work part-time. Are major and employment status associated? (c) You want to know whether the mean exam score of two classes differs. (d) A quality inspector checks 1,000 items and records them as defective or not. Is the defect rate consistent with the manufacturer's claimed 2%?
 
-(a) A poll asks 1,000 people whether they support a ballot measure. You want to test whether support differs from 50%.
-(b) A survey of 200 college students asks major and whether they have a job. Are major and employment status related?
-(c) A die is rolled 120 times. Do the frequencies match a fair die?
-
-**Exercise 11.3** *(LO: expected frequencies).* A survey of 300 people asks about breakfast frequency: daily, weekly, rarely, never. Under the null that all frequencies are equal, what is the expected count for each category? Is it at least 5?
+**11.3** *(Expected counts.)* A survey of 120 people records favorite season: Spring 25, Summer 40, Autumn 35, Winter 20. Under the null hypothesis that all seasons are equally preferred, what is the expected count for each? Are all expected counts at least 5?
 
 ### Application
 
-**Exercise 11.4** *(LO: goodness-of-fit).* A company produces cereal boxes with target weight 400g. A sample of 100 boxes is weighed, and the weights are sorted into four categories: below 395g, 395–399g, 400–404g, 405g and above. The observed frequencies are 18, 24, 40, 18. Suppose you expect (under normality) frequencies of 12, 38, 38, 12. Conduct a chi-square goodness-of-fit test at $\alpha = 0.05$.
+**11.4** *(Goodness-of-fit: full test.)* A die is rolled 120 times. The observed frequencies for faces 1–6 are: 25, 17, 22, 18, 21, 17. Test whether the die is fair at $\alpha = 0.05$. Show the full calculation table, state the degrees of freedom, identify the critical value, make a decision, and write a conclusion in plain language.
 
-**Exercise 11.5** *(LO: test of independence).* A survey of 400 employees classifies them as full-time or part-time (rows) and union or non-union (columns). The contingency table:
+**11.5** *(Test of independence: expected counts.)* A survey of 300 employees records job level (entry, mid, senior) and whether they have completed a training program (yes/no). The contingency table:
 
-|  | Union | Non-union |
-|---|---|---|
-| Full-time | 60 | 140 |
-| Part-time | 40 | 160 |
+| | Completed | Not completed | Total |
+|---|---|---|---|
+| Entry | 40 | 60 | 100 |
+| Mid | 55 | 45 | 100 |
+| Senior | 70 | 30 | 100 |
+| Total | 165 | 135 | 300 |
 
-Are employment status and union membership independent at $\alpha = 0.05$?
+(a) Calculate the expected count for the "Entry, Completed" cell. (b) Calculate expected counts for all six cells. (c) Check whether all expected counts meet the minimum-of-5 condition.
 
-**Exercise 11.6** *(LO: expected frequencies in independence).* In Exercise 11.5, calculate the expected frequency for the "full-time, union" cell. Does it meet the minimum of 5?
+**11.6** *(Test of independence: full test.)* Using the data from Exercise 11.5, compute the chi-square test statistic, state the degrees of freedom, find the critical value at $\alpha = 0.05$, and draw a conclusion. Is job level independent of training completion? If you reject the null, does this mean completing training causes promotion? Explain.
 
 ### Synthesis
 
-**Exercise 11.7** *(LO: goodness-of-fit + interpreting results).* A study of absent days at a hospital follows a Poisson distribution with mean 2. A sample of 100 departments is observed, and the frequency of departments with 0, 1, 2, 3, 4+ absent days is 20, 35, 27, 12, 6. Conduct a goodness-of-fit test. If you reject, what does that tell you about the distribution of absent days?
+**11.7** *(Effect size matters.)* Two researchers study the same question — whether gender is associated with preference for remote vs. in-person work. Researcher A surveys 50 people and gets $\chi^2 = 4.2$, $df = 1$, $p = 0.04$. Researcher B surveys 5,000 people and gets $\chi^2 = 4.5$, $df = 1$, $p = 0.03$. (a) Both reject the null at $\alpha = 0.05$. Compute Cramér's V for each. (b) What does the difference in V tell you about the practical meaning of the two results? (c) Why does a large sample size allow detection of a very weak association?
 
-**Exercise 11.8** *(LO: independence + recognizing causation limits).* A test of independence finds that smoking status and cancer diagnosis are dependent in a dataset of 10,000 people. The p-value is less than 0.001. Does this prove smoking causes cancer? Explain what the test actually tells you and what additional evidence you'd need.
+**11.8** *(Suspicious data.)* A researcher claims her experiment produced counts of exactly 150, 150, 150, 150 across four categories, each with expected count 150. Compute the chi-square statistic. What does this value tell you, and why should you be suspicious rather than reassured?
+
+**11.9** *(Connecting to earlier chapters.)* In Chapter 8, you built a 95% confidence interval for a population proportion. Now suppose you want to test whether the proportion of defective items in a batch equals the manufacturer's claimed rate of 5%. You could do this as a z-test for a proportion (Chapter 9) or as a goodness-of-fit test with two categories (defective, not defective). (a) For a sample of 400 items with 28 defectives, set up both tests. (b) Both should give the same conclusion at $\alpha = 0.05$. Why? (c) What is the relationship between a z-test statistic $z$ and a chi-square statistic $\chi^2$ in the two-category case?
 
 ### Challenge
 
-**Exercise 11.9** *(LO: degrees of freedom in a complex table).* A study observes 500 people across three age groups (rows) and four income brackets (columns). How many degrees of freedom for a test of independence? If the chi-square statistic is 21.5, is it significant at $\alpha = 0.05$?
+**11.10** *(Science and statistics.)* In Mendel's data, the chi-square of 92.93 leads to rejection of the 3:1 hypothesis. Fisher later argued that Mendel's data were suspiciously well-fitted to his theories in other experiments — the statistics were too good to be naturally generated. (a) Explain the difference between a test statistic that is too large (suggests the theory is wrong) and one that is too small (suggests the data may have been manipulated). (b) What additional information would you want to evaluate whether Mendel's data are fraudulent versus whether his theory was simply wrong? (c) Can chi-square alone tell you whether to distrust a researcher? What does and doesn't it establish?
 
-**Exercise 11.10** *(LO: integrating chi-square with prior chapters).* In Chapter 9, you tested whether a single proportion differed from 0.5 using a z-test. Here, you could also use a goodness-of-fit test with two categories (success, failure) and expected counts of 0.5 × $n$ each. Why might chi-square and z give different answers, and when would they agree?
-
----
-
-## Chapter summary
-
-You can now do four things you could not do an hour ago.
-
-You understand what the chi-square distribution is: a sum of squared, standardized deviations from a known distribution. Its shape depends on degrees of freedom. It is always right-tailed and always nonnegative.
-
-You can conduct a **goodness-of-fit test** to ask whether observed data match a proposed distribution. Build a table, calculate chi-square, compare to critical value, draw a conclusion. The key check: expected counts must all be at least 5.
-
-You can conduct a **test of independence** to ask whether two categorical factors are associated or independent. Use the formula for expected frequencies, build chi-square from the contingency table, and decide whether to reject independence. Same machinery as goodness-of-fit, different question.
-
-You understand the **scale shift** from one test to many: when replication studies accumulate chi-squares across independent samples, the combined result is itself chi-square. This is how we discover robust patterns in noisy data.
-
-Most importantly: you know that chi-square tests for *association*, not causation. A significant test tells you the variables are not independent. It does not tell you why, or which way the causal arrow points.
-
-What you should teach a friend: How to recognize when counts, not measurements, are the data you have. How to set up expected frequencies. Why the test is always right-tailed. And why correlation between two variables does not mean one causes the other.
-
----
-
-## Connections forward
-
-In Chapter 12 (F-Distribution and ANOVA), you will meet another distribution that tests whether several means differ—the next generalization of the two-sample t-test. Chi-square was categorical; ANOVA is continuous. Both compare observed to expected and ask whether the difference is noise or signal.
-
-In Chapter 13 (Linear Regression and Correlation), you will learn to measure association between two continuous variables. Chi-square tests association in contingency tables. Regression quantifies the strength and direction of a linear relationship. Both touch the same idea—whether one variable helps predict another—but through different machinery.
-
-Finally, if you take a course in Bayesian inference, you will see chi-square again as a tool for model criticism. You will propose a model (the null), generate expected data from it, compare to your actual data, and use chi-square to ask: "How consistent are the data with this model?" The logic is identical. The language is different, but the machinery is the same.
-
----
-
-## What would change my mind
-
-If I observed chi-square test results where very small or very large expected counts (below 1, above 100,000) were paired with reasonable conclusions, I would reconsider the minimum expected-count rule. I would also reconsider if I saw a case where violating the assumption produced notably different conclusions from a nonparametric alternative.
-
-## Still puzzling
-
-I remain uncertain about the practical boundary between "expected counts are low enough to worry" and "expected counts are so low the test is meaningless." Different statisticians cite different minima (3, 5, 10). The literature on this is scattered. I apply the "expected ≥ 5" rule because it's conventional and conservative, but the exact threshold would benefit from a careful simulation study.
-
----
-
-**Tags:** chi-square, goodness-of-fit, test of independence, contingency tables, categorical data, degrees of freedom, hypothesis testing, Mendel, observed vs. expected, right-tailed test
 ---
 
 ## LLM Exercise — Chapter 11: The Chi-Square Distribution (Analyze One Dataset Project)
 
-**Project:** Analyze One Real Dataset.
-**What you're building this chapter:** chi-square tests for categorical relationships in your data.
+**Project:** Analyze One Real Dataset.  
+**What you're building this chapter:** chi-square tests for categorical relationships in your data.  
 **Tool:** **Claude Code** + **Claude Project**.
 
 ---
@@ -481,12 +332,11 @@ suspected?
 
 **Preview of next chapter:** Chapter 12 covers ANOVA — comparing 3+ group means. You'll pick a categorical variable with multiple levels and run ANOVA on a quantitative outcome.
 
-
 ---
 
 ## 🕰️ AI Wayback Machine
 
-**Karl Pearson** was introduced the chi-square test in 1900 — and built the foundations of biometric statistics, with a controversial eugenics legacy.
+**Karl Pearson** introduced the chi-square test in 1900 — and built the foundations of biometric statistics, with a controversial eugenics legacy.
 
 **Run this:**
 
