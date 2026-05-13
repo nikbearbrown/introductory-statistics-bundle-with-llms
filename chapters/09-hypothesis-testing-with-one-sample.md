@@ -1,396 +1,245 @@
 # Chapter 9 — Hypothesis Testing with One Sample
-
-## Three title options
-
-1. **Can the Evidence Decide? Testing claims against data when the stakes are real**
-2. **The Burden of Proof: How statistics settles the question of whether something is actually true**
-3. **When Data Speaks Loudly Enough: Building the logic to overturn what we thought was true**
+*The logic of being hard to convince.*
 
 ---
 
-## TL;DR
+In May 2004, an FDA advisory committee sat down to vote on a drug.
 
-Hypothesis testing is a procedure for asking whether data from a sample provide strong enough evidence to reject a claim about a population parameter. The logic is asymmetric: the status quo (null hypothesis) is presumed true unless the evidence against it is strong enough—we control how strong by setting a significance level α. You learn to set up the test, choose the right distribution (z or t), compute a test statistic, find a p-value, and decide whether to reject the null hypothesis.
+The company had run a clinical trial. Patients taking the drug improved more than patients taking a placebo. The difference was real — the numbers were right there in the data. The company wanted approval. The committee had to decide whether the evidence was strong enough to change what doctors would prescribe to millions of people.
 
----
+The question the committee was actually asking was not "did patients improve?" They did. The question was: could this improvement have happened by random chance, even if the drug does nothing? And if the answer is "yes, it could have happened by chance," how likely is it? Once in twenty trials? Once in a hundred?
 
-## Cold open: The moment the advisory committee votes
+This is what hypothesis testing is. It is not a formula. It is a standard for evidence. The committee's job was to demand that the drug company meet that standard before overturning the default: no approval unless proven otherwise. The asymmetry — the null position has the advantage, the challenger must clear a high bar — is not bias. It is rationality about stakes.
 
-May 2004. An FDA advisory committee sits around a table. On one side: a pharmaceutical company with data from a clinical trial showing that their new drug reduces pain in osteoarthritis patients. On the other side: committee members who must decide whether to approve the drug for the market, knowing that approval will affect millions of people.
-
-The company presents the numbers: patients taking the drug improved more than patients taking placebo. The difference is real, they argue. The committee asks: how real? Could this difference have happened by chance—by random noise in the data—even if the drug does nothing? Or is the signal strong enough that we should believe the drug works?
-
-This is the question hypothesis testing answers. It's not a question of whether the drug helps everyone (nobody expects that). It's a question of whether the evidence is strong enough to reject the status quo: "this drug doesn't work."
-
-The asymmetry matters. A drug company wants to prove its product works. The committee's job is to ask for strong evidence before overturning the default position: no approval until proven otherwise. This is not bias. It's a rational response to the stakes. The burden of proof lies with anyone asking us to change our minds.
-
-This chapter teaches you that logic, and how to implement it with the tools statistics provides.
-
-### Learning objectives
-
-By the end of this chapter you will be able to:
-
-- **State** null and alternative hypotheses correctly, identifying one-tailed and two-tailed tests.
-- **Distinguish** between Type I and Type II errors and **explain** the trade-off between them.
-- **Compute** the test statistic (z or t) for a single population mean, **compare** it to the critical value, and **make a decision**.
-- **Calculate** the p-value and **interpret** it correctly (probability of the data given the null, not probability of the null given the data).
-- **Conduct** hypothesis tests for a single population proportion.
-- **Apply** the five-step procedure (set hypotheses, choose significance level, select test statistic, calculate, decide) to real scenarios with stakes.
-
-### Prerequisites
-
-Confidence intervals (Chapter 8). The central limit theorem (Chapter 7). Standard normal and t-distributions. Comfort with Greek letters and subscript notation.
-
-### Why this chapter matters
-
-In Chapter 8, you learned to build confidence intervals: "we're 95% confident the population mean is in this range." Now you learn to ask a different question: "The data show X. Is this evidence strong enough to reject the claim that the population parameter is Y?" Confidence intervals say where the parameter likely lives. Hypothesis testing says whether the data contradict a specific claim.
-
-This matters because in science, medicine, manufacturing, and policy, we constantly face claims that need testing. A new teaching method. A drug that treats depression. A manufacturing process that's gone out of adjustment. A poll that predicts an election outcome. In each case, someone is asking us to change what we do based on evidence. Hypothesis testing provides the logic to say: sufficient evidence, or not yet.
-
-You'll encounter the language of p-values, significance levels, and "statistical significance" for the rest of your career. You need to understand not just how to compute these, but what they actually mean—and what they don't mean. The most common misunderstanding is that a p-value tells you the probability your hypothesis is true. It does not. It tells you the probability of observing data this extreme or more extreme, assuming the null hypothesis is true. The conditional direction matters profoundly.
+This chapter teaches you that logic and the machinery that implements it.
 
 ---
 
-## Concept 1 — The Logic of Hypothesis Testing: Null, Alternative, Error, and the Burden of Proof
+## The presumption of innocence
 
-**Cold open: A court and the burden of proof**
+Hypothesis testing was modeled, consciously, on a legal proceeding.
 
-A defendant stands trial. The court begins with a presumption: the defendant is innocent. This is the status quo. The burden of proof lies with the prosecution. The prosecution must present evidence—witness testimony, physical evidence, DNA—strong enough that the jury has no reasonable doubt (usually interpreted as 95% certainty) that the defendant is guilty. If the evidence is not that strong, the jury says "not guilty," not because they're convinced of innocence, but because the evidence failed to meet the threshold for conviction.
+A defendant stands trial. The court begins with a presumption of innocence. The prosecution must present evidence strong enough to overcome that presumption — "beyond reasonable doubt." If the evidence fails to reach that threshold, the verdict is "not guilty," which does not mean the court has declared the defendant innocent. It means: the evidence wasn't strong enough to convict.
 
-Notice the asymmetry. The presumption favors the defendant. The prosecution must overcome that presumption with strong evidence. The defense doesn't have to prove innocence; they only need to show reasonable doubt.
+The logic is asymmetric by design. The status quo — innocence — has the advantage. Changing that status quo requires meeting a high bar. The defense doesn't have to prove anything; the prosecution must prove nearly everything.
 
-This is the logic of hypothesis testing, and it's not accidental. Scientists, regulators, and statisticians adopted it deliberately, and for good reason. The status quo—the way things are now, the standard practice, the assumed state—has an advantage in this framework. It takes strong evidence to overturn it.
+Hypothesis testing works exactly this way. Every test has a **null hypothesis**, written $H_0$ — the status quo, the default, the claim we start from. And it has an **alternative hypothesis**, written $H_a$ — the challenger, the new claim, what we'd conclude if the evidence against the null is strong enough.
 
-### The null hypothesis and the alternative hypothesis
+The null hypothesis is always a claim of no effect, no change, no difference. "The drug does nothing." "The machine is properly calibrated." "The proportion of voters who support the measure is 50%." The null is the thing you continue believing in the absence of evidence. It always includes an equality sign — $\mu = 150$, $p = 0.50$, $\mu \leq 40$ — because you're claiming the parameter sits at or below some specific value.
 
-Every hypothesis test involves two competing claims:
+The alternative is the contender. It never includes an equals sign. It says: the parameter is not that value, or it's higher, or it's lower.
 
-The **null hypothesis**, written $H_0$ (aitch-naught), is the statement we assume to be true unless the data convincingly show otherwise. It is a claim of no difference, no effect, no change. "The drug has no effect." "The mean weight of the population is 150 pounds." "The proportion of voters who support the measure is 0.5." The null is the status quo, the default, the thing we would continue believing if we had no data.
+The question the whole procedure asks is: are the data consistent with the null hypothesis, or have they strayed so far from what the null predicts that the null becomes unbelievable?
 
-Notice that $H_0$ always includes an equals sign (=, ≤, or ≥). This is a mathematical convention, but it reflects the logic: if the parameter equals the hypothesized value, the data should scatter randomly around that value. We test whether the data are consistent with that scatter, or whether they deviate too far to be believed.
-
-The **alternative hypothesis**, written $H_a$ or $H_1$, is the claim we're testing. It is what we would conclude if the null hypothesis is rejected. "The drug has an effect." "The mean weight is not 150 pounds." "The proportion is not 0.5." The alternative is the contender, the new claim, the thing seeking to displace the null.
-
-$H_a$ never includes an equals sign. It uses ≠, <, or >.
-
-Two scenarios determine which test you're running:
-
-**Two-tailed test:** The alternative hypothesis allows the parameter to differ from the null in either direction. If $H_0: \mu = 100$, then $H_a: \mu \neq 100$. We reject the null if the sample mean is too far above or too far below 100. The two tails of the distribution—both higher and lower—are where the "too different" values live. This is appropriate when we care about difference in either direction.
-
-**One-tailed test:** The alternative hypothesis specifies a direction. If $H_0: \mu \leq 100$ and $H_a: \mu > 100$, we reject the null only if the sample mean is too much higher. We place all the "too extreme" probability in one tail. This is appropriate when we have a specific direction of interest: is the new process faster (not just different)? Does the drug reduce side effects (not just change them)?
-
-### Type I and Type II errors—the trade-off you can't escape
-
-Here's the uncomfortable truth: you can make an error either way. If you reject the null when it's actually true, that's a **Type I error**. You've rejected a good null hypothesis. If you fail to reject the null when it's actually false, that's a **Type II error**. You've let a false claim stand.
-
-The probabilities are denoted by Greek letters:
-
-$\alpha$ (alpha) = P(Type I error) = probability of rejecting the null when the null is true.
-
-$\beta$ (beta) = P(Type II error) = probability of failing to reject the null when the null is false.
-
-The power of the test is $(1 - \beta)$. It measures the test's ability to correctly reject the null when the null is false.
-
-Here's what makes this harder: as you try to make $\alpha$ smaller (fewer false rejections), $\beta$ tends to grow larger (more false non-rejections), and vice versa. You can't drive both to zero. You face a trade-off. You choose to control $\alpha$ because the presumption favors the status quo—you want it to be hard to reject, so you make false rejection unlikely. $\beta$ follows wherever it will, and you hope it's small, but you're not guaranteed to control it directly.
-
-#### A worked example—imagining the errors
-
-Suppose the null hypothesis is: "This sleeping bag can withstand temperatures of –15°F." The alternative is: "It cannot."
-
-A Type I error: You conclude the bag is inadequate when, in fact, it really can handle –15°F. You reject a good sleeping bag. Consequence: you don't use a bag that would have kept you warm.
-
-A Type II error: You conclude the bag is adequate when, in fact, it cannot handle –15°F. You fail to reject a bad null. Consequence: you sleep outside in –15°F weather with an insufficiently rated bag. You risk hypothermia.
-
-Which error has worse consequences? Type II — by a wide margin. Staying warm is life-critical.
-
-So you'd set $\alpha$ high (maybe 0.20 instead of 0.05) to reduce the risk of Type II. You accept a higher false-rejection rate to protect against the worse error. The trade-off is deliberate.
-
-### Common misconceptions
-
-**"Accepting the null hypothesis means it's true."** No. Failing to reject the null means the data are consistent with it. The null might be true. It might also be false, but you don't have enough evidence yet. The language is careful: we "reject" or "fail to reject," never "accept."
-
-**"The burden of proof is balanced between H0 and Ha."** No. The null has the advantage. It takes roughly 95% or 99% certainty to reject it. The alternative must clear a high bar. This is intentional—we make false rejection uncommon.
-
-**"If α = 0.05, there's a 95% chance my conclusion is correct."** This misreads the meaning of α. It is the probability of a Type I error under the assumption that the null is true. It doesn't quantify the probability that your conclusion is right or wrong. That depends on how often the null is actually true in situations like the one you're in—information the test doesn't give you.
+<!-- → [INFOGRAPHIC: Two-column diagram titled "The asymmetry of the burden of proof." Left column (H₀, shaded): "Status quo. Presumed true. No evidence needed to maintain." Right column (Hₐ): "Challenger. Must clear a high bar. Requires data rare enough under H₀ to be convincing." Below both columns, an arrow pointing right labeled "Evidence strength required →", with the threshold for rejection marked at α = 0.05. Caption: "The null starts with the advantage. The alternative must earn the win."] -->
 
 ---
 
-## Concept 2 — The Anatomy of a Hypothesis Test: Test Statistics, Critical Values, and P-Values
+## Innocent until the evidence is extreme enough
 
-**Cold open: Drawing a line in the sand**
+Here is how you decide whether the evidence is extreme enough.
 
-Imagine you're a manager at a manufacturing plant. A machine is supposed to dispense 8 ounces of liquid into each bottle. You take a random sample of 35 bottles and measure them. The sample mean is 7.91 ounces. The sample standard deviation is 0.173 ounces.
+You assume the null hypothesis is true. Under that assumption, you ask: how likely is it that you'd observe data this extreme, or more extreme, just by chance?
 
-Is the machine broken? Or is this normal variation?
+That probability is the **p-value**.
 
-You can't tell just by looking at the difference (7.91 vs. 8). You need to ask: how far from 8 is 7.91, measured in standard deviations? If it's a small distance, say 0.5 standard deviations, it's noise. If it's 3 standard deviations, it's a signal. The test statistic quantifies this distance. Then you decide: beyond how many standard deviations do I shut down the machine?
+A small p-value means: if the null were true, data this extreme would be very rare. So either something very unusual happened, or the null is wrong. We tend to conclude the null is wrong.
 
-### Building the test statistic from the Central Limit Theorem
+A large p-value means: this data is not surprising under the null. No reason to abandon the null.
 
-Recall from Chapter 7 that if you take many samples of size $n$ from a population with mean $\mu_0$ and standard deviation $\sigma$, the sample means $\bar{X}$ are normally distributed with mean $\mu_0$ and standard error $\sigma/\sqrt{n}$:
+The threshold for "small enough" is $\alpha$, the **significance level**. You set it before you look at the data. The most common choice is $\alpha = 0.05$: you will reject the null if the probability of data this extreme (under the null) is less than 5%.
 
-$$\bar{X} \sim N\left(\mu_0, \frac{\sigma}{\sqrt{n}}\right)$$
+Decision rule: if p-value $< \alpha$, reject $H_0$. If p-value $\geq \alpha$, fail to reject $H_0$.
 
-This is the foundation of hypothesis testing. Under the null hypothesis, we assume the population mean equals $\mu_0$ (the hypothesized value). If the null is true, sample means should scatter randomly around $\mu_0$ in a normal pattern.
+The language matters. You never say "accept the null." Failing to reject the null means the data are consistent with it — not that the null is true. The null might be false, but you don't have enough evidence to say so. The court verdict is "not guilty," not "innocent."
 
-Now, take your actual sample and compute $\bar{x}$ (the sample mean). How many standard errors is $\bar{x}$ away from $\mu_0$? That's the test statistic:
+---
+
+## What the p-value is not
+
+The most common misunderstanding about p-values is worth addressing directly, because it leads to real errors in real science.
+
+The p-value is the probability of observing data this extreme, **given that the null hypothesis is true**. It is a conditional probability in a specific direction: $P(\text{data this extreme} \mid H_0 \text{ true})$.
+
+It is not the probability that the null hypothesis is true given the data. That would be $P(H_0 \text{ true} \mid \text{data this extreme})$ — the reversed conditional, entirely different, and exactly what you'd want to know but cannot compute from the test alone.
+
+Think about what this means. A p-value of 0.04 says: if the null is true, there is a 4% chance of seeing data like mine. It does not say: there is a 4% chance the null is true. Those are different statements about different probabilities pointing in opposite directions.
+
+The doctor who interprets a p-value of 0.04 as "96% confidence that the drug works" has made a version of the same error the mammogram-reading doctor made in Chapter 3. That chapter showed that $P(\text{positive} \mid \text{cancer}) \neq P(\text{cancer} \mid \text{positive})$. Here: $P(\text{data} \mid H_0) \neq P(H_0 \mid \text{data})$.
+
+Hold that distinction. It will matter every time you read a scientific result for the rest of your life.
+
+<!-- → [INFOGRAPHIC: Two-arrow diagram side by side. Left arrow points from "H₀ is true" → "P(data this extreme)" labeled "What the p-value measures." Right arrow points from "Data observed" → "P(H₀ is true)" labeled "What we want to know — but cannot get from p alone." A large ≠ symbol between them. Below: parallel to Chapter 3's mammogram — P(positive|cancer) ≠ P(cancer|positive). Caption: "The p-value runs in the wrong direction for the question you actually want answered."] -->
+
+---
+
+## Two kinds of error, one unavoidable trade-off
+
+There are two ways a hypothesis test can go wrong.
+
+You can reject the null when it's actually true. This is a **Type I error** — a false positive. You convicted an innocent defendant. The probability of committing this error is $\alpha$. You control it directly by your choice of significance level.
+
+You can fail to reject the null when it's actually false. This is a **Type II error** — a false negative. You let a guilty defendant go free. The probability of committing this error is $\beta$. The probability of correctly rejecting a false null is $1 - \beta$, called the **power** of the test.
+
+Here is the uncomfortable truth: you cannot drive both $\alpha$ and $\beta$ to zero simultaneously. If you make it harder to reject the null (lowering $\alpha$), you make it more likely you'll fail to reject a false null (raising $\beta$). The errors are in tension. You can trade one for the other, but you cannot eliminate both.
+
+This is why the choice of $\alpha$ is not arbitrary. It depends on the consequences of each error.
+
+A worked example that makes this concrete. Suppose the null hypothesis is: "This sleeping bag is rated to withstand $-15°$F." You're testing whether to trust the rating before a winter camping trip.
+
+A Type I error: you conclude the bag fails when it actually would have kept you warm. You leave your gear at home. You're cold, but alive.
+
+A Type II error: you conclude the bag is fine when it cannot actually handle $-15°$F. You bring the bag. You sleep outside in extreme cold with inadequate equipment. This is a life-threatening mistake.
+
+The consequences are not symmetric. The Type II error is far more dangerous. Rationally, you should set $\alpha$ high — maybe 0.20 — to make it easy to reject the bag's rating. A high $\alpha$ means more false rejections (Type I errors), but it drives down $\beta$ (Type II errors). You accept the trade-off deliberately, because the two errors have different consequences.
+
+Medical testing works the same way, in reverse. For a screening test, a Type II error — missing a disease that's present — is usually worse than a Type I error — flagging someone for further testing who turns out to be fine. So you set $\alpha$ relatively high, accepting more false positives to minimize false negatives.
+
+For drug approval, the calculation flips. Approving a drug that doesn't work (and might have side effects) is a Type I error. Not approving a drug that does work is a Type II error. Regulators typically set $\alpha = 0.05$ or even $0.01$, demanding strong evidence before approval, accepting some false negatives as the price of controlling false positives.
+
+The framework doesn't tell you which error is worse. That's a judgment about stakes, not statistics. What the framework does is make the trade-off explicit and give you the tools to control it deliberately.
+
+<!-- → [TABLE: 2×2 decision matrix. Rows: "Reject H₀ / Fail to reject H₀." Columns: "H₀ actually true / H₀ actually false." Cells: (Reject, True) = "Type I error — false positive — probability α"; (Reject, False) = "Correct decision — power = 1−β"; (Fail to reject, True) = "Correct decision — probability 1−α"; (Fail to reject, False) = "Type II error — false negative — probability β." Note below: "Lowering α raises β. You trade one error for the other. The question is which error costs more."] -->
+
+---
+
+## Building the machinery: the test statistic
+
+Now we can build the mechanics.
+
+Under the null hypothesis, you assume the population mean equals $\mu_0$ (the hypothesized value). The central limit theorem, from Chapter 7, tells you that if you take many samples of size $n$ from this population, the sample means will be normally distributed with mean $\mu_0$ and standard error $\sigma/\sqrt{n}$.
+
+Your actual sample gives you a sample mean $\bar{x}$. The question is: how far is $\bar{x}$ from $\mu_0$, measured in standard errors? Far enough to be surprising? Or is it the kind of variation you'd expect just from random sampling?
+
+The answer is the **test statistic**:
 
 $$Z = \frac{\bar{x} - \mu_0}{\sigma/\sqrt{n}}$$
 
-(This is the z-test, used when you know $\sigma$—rare in practice, but clear in logic.)
+This is a z-score. It tells you how many standard errors your sample mean is from the hypothesized population mean. If $Z = 0.5$, your sample mean is half a standard error above $\mu_0$ — unremarkable, consistent with random sampling. If $Z = 3.2$, your sample mean is 3.2 standard errors above $\mu_0$ — quite far out in the tail of the distribution.
 
-This z-score tells you where your sample mean sits on the standard normal distribution. If $Z = 2$, your sample mean is 2 standard errors above the hypothesized value. On the standard normal curve, that's pretty far out—about 2.3% of the distribution lies beyond that point.
-
-**Critical values and decision rules.** You decide, before collecting data, what threshold you're willing to cross. If you set $\alpha = 0.05$, you're saying: I will reject the null if the test statistic falls in the outermost 5% of the distribution (assuming the null is true).
-
-For a two-tailed test with $\alpha = 0.05$, you split the 5% into two tails: 2.5% in each tail. The critical values are $Z_{0.025} = 1.96$ and $Z_{-0.025} = -1.96$. If your calculated test statistic $|Z| > 1.96$, you reject the null.
-
-For a one-tailed test (say, $\alpha = 0.05$ with $H_a: \mu > \mu_0$), you put all 5% in the upper tail. The critical value is $Z_{0.05} = 1.645$. You reject the null only if $Z > 1.645$.
-
-The decision rule is straightforward:
-- If the test statistic is more extreme than the critical value, reject $H_0$.
-- If the test statistic is not more extreme, fail to reject $H_0$.
-
-### The P-value approach—probability, not proof
-
-The critical value approach asks: is my test statistic in the rejection region? The p-value approach asks a subtly different question: how likely is a test statistic this extreme, if the null is true?
-
-The **p-value** is the probability of observing a test statistic as extreme as, or more extreme than, the one you calculated, assuming the null hypothesis is true. It's a conditional probability: P(data this extreme | null is true).
-
-It is not P(null is true | data). That's a common mistake, and it's a different question entirely. The p-value doesn't tell you how likely the null is. It tells you how surprising your data are under the assumption that the null is true.
-
-Here's the decision rule:
-- If p-value < α, reject $H_0$. The data are too surprising under the null to keep believing it.
-- If p-value ≥ α, fail to reject $H_0$. The data are not surprising enough.
-
-Example: You test whether a coin is fair. You flip it 100 times and get 58 heads. Under the assumption that the coin is fair, what's the probability of getting 58 or more heads (or 58 or more tails, for a two-tailed test)? If that probability is, say, 0.12, then the p-value is 0.12. You set α = 0.05. Since 0.12 > 0.05, you fail to reject the null that the coin is fair. The data are not surprising enough to conclude the coin is biased.
-
-#### A worked example—Jeffrey's goggles
-
-Jeffrey, eight years old, has been swimming the 25-yard freestyle in a mean time of 16.43 seconds with standard deviation 0.8 seconds. His father Frank buys him goggles and times 15 swims. The new mean is 16 seconds. Frank thinks the goggles helped.
-
-**Set up the test:**
-
-$H_0: \mu = 16.43$ (the goggles had no effect)
-
-$H_a: \mu < 16.43$ (the goggles made him faster)
-
-This is a one-tailed test (left tail).
-
-**Choose the distribution and test statistic:**
-
-$n = 15$, $\bar{x} = 16$ seconds, $\sigma = 0.8$ (known from past swims), population is normal.
-
-Use the z-test:
-
-$$Z = \frac{16 - 16.43}{0.8/\sqrt{15}} = \frac{-0.43}{0.2065} = -2.08$$
-
-**Calculate the p-value:**
-
-On the standard normal, how much area lies to the left of $Z = -2.08$? Looking at a standard normal table, $P(Z < -2.08) \approx 0.0187$ or 1.87%.
-
-**Make a decision:**
-
-Set α = 0.05. The p-value is 0.0187. Since 0.0187 < 0.05, reject $H_0$.
-
-**Conclusion:**
-
-At the 5% significance level, there is sufficient evidence to conclude that Jeffrey's mean swimming time is less than 16.43 seconds with the goggles. The data support Frank's belief.
-
-### The one-tailed vs. two-tailed distinction
-
-When the alternative hypothesis is directional (μ > μ₀ or μ < μ₀), all the rejection probability goes into one tail. When the alternative is non-directional (μ ≠ μ₀), it splits.
-
-This has a practical consequence: for the same α and the same test statistic, a one-tailed test is more likely to reject the null. The critical value is smaller (1.645 instead of 1.96 for α = 0.05). But you pay a cost: you're only looking for deviation in one direction. If the effect goes the other way, you'll miss it even if it's real.
-
-### Common misconceptions
-
-**"A p-value of 0.045 means there's a 4.5% chance the null hypothesis is true."** No. It means: if the null is true, there's a 4.5% chance of observing data this extreme or more extreme. Very different. The p-value is about the data given the null, not the null given the data.
-
-**"A p-value of 0.045 with α = 0.05 means we barely rejected the null, so the effect is small."** Not necessarily. The p-value measures rarity, not size. A tiny p-value with a large sample size can accompany a small practical effect. A large p-value can hide a meaningful effect that you didn't have the power (sample size) to detect.
-
-**"Statistical significance means practical significance."** No. A drug that reduces pain by 0.2 points on a 100-point scale might be statistically significant (p < 0.05) with a large enough sample, but it's not clinically meaningful. Size and significance are different questions.
-
----
-
-## Concept 3 — Hypothesis Tests for Means and Proportions
-
-**Cold open: The machinery works across many contexts**
-
-Whether you're testing whether a new sales trainee meets the company standard, whether a manufacturing machine is calibrated correctly, or whether a public health intervention is effective, the logic is identical. What changes is which distribution you use—the z-distribution or the t-distribution—and which parameter you're testing (mean or proportion). But the five-step procedure applies everywhere.
-
-### Hypothesis tests for a single population mean
-
-You have three scenarios, determined by sample size and whether you know the population standard deviation.
-
-**If σ is known and n is large (≥ 30), or the population is normal regardless of n:**
-
-Use the z-test:
-
-$$Z = \frac{\bar{x} - \mu_0}{\sigma/\sqrt{n}}$$
-
-Critical values come from the standard normal table.
-
-**If σ is unknown and n is small (< 30):**
-
-Substitute the sample standard deviation $s$ for σ and use the Student's t-distribution:
+In practice, you rarely know the population standard deviation $\sigma$. You estimate it with the sample standard deviation $s$. When you do this substitution, the test statistic follows not the normal distribution but the **t-distribution**:
 
 $$t = \frac{\bar{x} - \mu_0}{s/\sqrt{n}}$$
 
-degrees of freedom: $df = n - 1$
+with $n - 1$ degrees of freedom. The t-distribution is wider and flatter than the normal — it has heavier tails — because you're carrying extra uncertainty from estimating $\sigma$. As sample size grows, the t-distribution converges to the normal. With $n \geq 30$, the difference is small.
 
-Critical values come from the t-table with $df = n - 1$. The t-distribution is wider and flatter than the normal (shorter tails), which accounts for the extra uncertainty from estimating σ. As $n$ grows, the t-distribution approaches the normal.
+When to use which:
 
-**If σ is unknown and n is large (≥ 30):**
+- Know $\sigma$, or $n \geq 30$ and population is approximately normal: use the z-test.
+- Don't know $\sigma$ and $n < 30$: use the t-test.
+- Don't know $\sigma$ but $n \geq 30$: either works; the t-test is technically more correct, the difference is negligible.
 
-You can use either approach. Many statisticians use the z-test and substitute $s$ for σ, because with large $n$, the t-distribution is very close to normal. Others use the t-test because it's technically more precise. Both are defensible.
-
-#### A worked example—Sales and company standards
-
-Jasmine is new to the sales team. Company policy requires new hires to close contracts averaging at least $100 over their trial period. In 16 sales calls, Jasmine closed contracts for a mean value of $108, with a sample standard deviation of $12.
-
-Does she meet the standard at the 95% confidence level (α = 0.05)?
-
-**Set up the test:**
-
-$H_0: \mu \leq 100$ (she hasn't met the standard)
-
-$H_a: \mu > 100$ (she has met the standard)
-
-This is a one-tailed test (right tail).
-
-**Choose the test statistic:**
-
-$n = 16$ (small), σ unknown. Use the t-test with $df = 15$.
-
-$$t = \frac{108 - 100}{12/\sqrt{16}} = \frac{8}{3} = 2.67$$
-
-**Find the critical value:**
-
-For $df = 15$ and α = 0.05 (one-tailed, right tail), the critical value is $t_{0.05, 15} = 1.753$.
-
-**Make a decision:**
-
-The calculated t-statistic (2.67) exceeds the critical value (1.753). Reject $H_0$.
-
-**Conclusion:**
-
-At the 5% significance level, there is sufficient evidence to conclude that Jasmine's mean contract value exceeds $100. She meets the company standard.
-
-### Hypothesis tests for a single population proportion
-
-Testing a proportion follows the same logic, but uses a different test statistic based on the binomial distribution approximated by the normal.
-
-When testing a claim about the proportion $p$ of successes in a population:
-
-Set up $H_0: p = p_0$ (or ≤ or ≥) and $H_a: p \neq p_0$ (or > or <).
-
-Conditions: The sample size must be large enough that $np' > 5$ and $nq' > 5$, where $p' = x/n$ is the sample proportion and $q' = 1 - p'$.
-
-Test statistic:
-
-$$Z = \frac{p' - p_0}{\sqrt{\frac{p_0 q_0}{n}}}$$
-
-where $q_0 = 1 - p_0$.
-
-This z-score tells you how many standard deviations the sample proportion is from the hypothesized proportion.
-
-#### A worked example—Bank lending practices
-
-A bank believes 50% of first-time borrowers take out smaller loans than other borrowers. They sample 100 first-time borrowers and find 53 took out smaller loans. Test whether the proportion differs from 50% at the 5% significance level.
-
-**Set up the test:**
-
-$H_0: p = 0.50$
-
-$H_a: p \neq 0.50$
-
-Two-tailed test.
-
-**Check the condition:**
-
-$np' = 100 \times 0.53 = 53 > 5$ ✓
-
-$nq' = 100 \times 0.47 = 47 > 5$ ✓
-
-**Calculate the test statistic:**
-
-$$Z = \frac{0.53 - 0.50}{\sqrt{\frac{0.50 \times 0.50}{100}}} = \frac{0.03}{0.05} = 0.60$$
-
-**Find the critical values:**
-
-For a two-tailed test with α = 0.05, the critical values are ±1.96.
-
-**Make a decision:**
-
-The calculated z-statistic (0.60) lies between the critical values (−1.96 and 1.96). Fail to reject $H_0$.
-
-**Conclusion:**
-
-At the 5% significance level, there is insufficient evidence to conclude that the proportion of first-time borrowers taking out smaller loans differs from 50%. The data are consistent with the bank's belief.
-
-### Common misconceptions
-
-**"A larger sample always leads to rejecting the null."** No. A larger sample gives you more power to detect a true effect, but it doesn't make you reject a null that's actually true. If the null is true, a larger sample is more likely to show data very close to the null, reinforcing the decision not to reject.
-
-**"The t-test is always safer than the z-test."** The t-test is technically more appropriate when σ is unknown and n is small, because it accounts for the extra uncertainty. But with large n, the two are nearly identical, and the choice between them is a minor detail.
-
-**"A test for a proportion requires the data to be normally distributed."** No. The test assumes the population proportion has a binomial distribution. You approximate it with normal via the central limit theorem. The data themselves don't have to be normally distributed; the population of successes/failures does, which is a different thing.
+<!-- → [IMAGE: Overlapping density curves on the same axes. Standard normal N(0,1) in dark solid line. t-distribution with df=5 in lighter dashed line — visibly wider tails. t-distribution with df=30 nearly overlapping the normal. Caption: "The t-distribution accounts for uncertainty in estimating σ. With small samples, the tails are heavier. By n=30, the difference is negligible."] -->
 
 ---
 
-## Integration: The Five-Step Procedure, Replication Crisis, and P-Hacking
+## The five-step procedure
 
-You now have the pieces. Here's how they fit together.
+Every hypothesis test follows the same structure. Learn the structure once and you can apply it to any test you ever conduct.
 
-### The five-step procedure for any hypothesis test
+**Step 1 — State the hypotheses.** Write $H_0$ and $H_a$ explicitly. Identify whether the test is one-tailed (the alternative specifies a direction: $\mu > \mu_0$ or $\mu < \mu_0$) or two-tailed (the alternative allows deviation in either direction: $\mu \neq \mu_0$). This choice changes where the rejection region lives and how you interpret the test statistic.
 
-This template works for every hypothesis test you'll ever conduct.
+**Step 2 — Set the significance level.** Choose $\alpha$ before looking at the data. 0.05 is conventional. But the right choice depends on the consequences of each error type, not on convention.
 
-**Step 1: State the null and alternative hypotheses.** Review the question. What parameter is being tested (mean, proportion)? Is this a claim about a specific value, or a direction? Write $H_0$ and $H_a$ carefully.
+**Step 3 — Compute the test statistic.** Calculate $Z$ or $t$ from your sample data. This locates your sample mean on the distribution of sample means under the null.
 
-**Step 2: Set the level of significance (α).** This is a policy decision. Common choices are 0.05 (5%), 0.01 (1%), and rarely 0.10 (10%). Higher α means easier rejection, more power, but higher Type I error risk. Choose based on the consequences of false rejection.
+**Step 4 — Find the p-value.** The p-value is the area in the tail of the distribution beyond your test statistic. For a two-tailed test, you double the one-tail area (since deviation in either direction counts). Compare the p-value to $\alpha$.
 
-**Step 3: Select the test statistic and find the critical value.** Based on the hypotheses and sample size, choose z or t. Sketch the distribution, mark the critical value(s), and shade the rejection region.
+**Step 5 — Conclude.** If p-value $< \alpha$, reject $H_0$ and state what you've found in plain language. If p-value $\geq \alpha$, fail to reject $H_0$ and note that the data are consistent with the null. Always state what the test was about and what the conclusion means for the real question you were trying to answer.
 
-**Step 4: Calculate the test statistic from your data.** Use the sample mean (or proportion), sample standard deviation, and sample size to compute the statistic. Mark it on the sketch.
+A worked example that follows all five steps.
 
-**Step 5: Reach a conclusion.** If the test statistic is in the rejection region (or p-value < α), reject $H_0$. Write two statements: one formal ("At the 5% significance level, there is sufficient evidence to conclude..."), one action-oriented ("The machine is miscalibrated and requires adjustment").
+Jeffrey, age eight, has been swimming the 25-yard freestyle in a mean time of 16.43 seconds with standard deviation 0.8 seconds. His father buys him goggles and times 15 swims. The new mean is 16.0 seconds. Did the goggles help?
 
-### The replication crisis and the misuse of p-values
+*Step 1 — Hypotheses:*
 
-Here's where the method meets reality. Hypothesis testing works beautifully in theory. In practice, it has become a source of false claims.
+$H_0: \mu = 16.43$ (the goggles had no effect; any difference is random)
 
-The problem: If you run 20 hypothesis tests, all testing null hypotheses that are actually true (no real effect), you expect 1 to 2 to be "statistically significant" just by chance (that's what α = 0.05 means). But if you publish only the tests that come out significant, readers see evidence of effects that don't actually exist. This is p-hacking: running many tests, adjusting the analysis in ways that aren't pre-specified, and reporting only what worked. It's not lying—it's a misuse of the method.
+$H_a: \mu < 16.43$ (the goggles made him faster)
 
-The replication crisis in psychology, medicine, and other fields arose partly from this. A stunning result published in a prestigious journal couldn't be replicated when an independent lab tried. Why? Because the original researchers ran dozens of tests (some explicitly, some implicitly by trying different data transformations), and p-values alone don't distinguish real effects from noise when you've done multiple comparisons.
+One-tailed test, lower tail.
 
-How to protect yourself:
-- Pre-register your test: write down your hypothesis and analysis plan before looking at the data.
-- Report the actual p-value, not just "significant" or "not significant." A p-value of 0.049 and 0.0001 are both < 0.05, but they tell different stories.
-- If you run multiple tests, adjust α (the Bonferroni correction: divide α by the number of tests).
-- Replicate when possible. One study with p < 0.05 is interesting. Independent replication is convincing.
-- Remember that "not significant" doesn't mean the null is true. It means you didn't gather enough evidence to reject it yet.
+*Step 2 — Significance level:* $\alpha = 0.05$.
 
-### Common misconceptions
+*Step 3 — Test statistic:* $n = 15$, $\bar{x} = 16.0$, $\sigma = 0.8$ known from previous swims.
 
-**"The p-value is the probability that my result happened by chance."** Ambiguous and misleading. The p-value is the probability of the data given the null. All data happen to some probability; the question is whether they're consistent with the null or whether they contradict it so sharply that the null becomes unbelievable.
+$$Z = \frac{16.0 - 16.43}{0.8/\sqrt{15}} = \frac{-0.43}{0.2065} = -2.08$$
 
-**"A p-value is garbage if you didn't pre-register your test."** Not garbage, but less trustworthy. Pre-registration commits you to a single test, so the p-value accurately describes the probability of that specific data under the null. Without pre-registration, you've implicitly run multiple tests, and the p-value alone can't tell readers how many.
+*Step 4 — P-value:* The area to the left of $Z = -2.08$ on the standard normal is approximately 0.019.
 
-**"Significance level α is an objective property of data."** No. α is a choice you make before the test. Different fields, different risk tolerances, lead to different choices. Drug approval might demand α = 0.01 (very strong evidence). Marketing research might accept α = 0.10 (you're more willing to try something that might not work).
+*Step 5 — Conclude:* Since $0.019 < 0.05$, reject $H_0$. At the 5% significance level, there is sufficient evidence to conclude that Jeffrey's mean swimming time is less than 16.43 seconds with the goggles. Frank's belief is supported by the data.
+
+<!-- → [IMAGE: Standard normal curve for Jeffrey's one-tailed test. The left tail beyond Z = −1.645 shaded as the rejection region and labeled "α = 0.05." The calculated test statistic Z = −2.08 marked with a vertical line, clearly inside the shaded rejection region. The p-value area (left of −2.08) labeled 0.019. Caption: "The test statistic lands in the rejection region. The data are rare enough under the null to reject it."] -->
 
 ---
 
-## Synthesis and Implications
+## Testing proportions
 
-You now understand the machinery of hypothesis testing well enough to apply it, critique it, and recognize when it's being misused.
+The same logic applies when the parameter of interest is a proportion rather than a mean.
 
-The core idea is simple: the status quo is presumed true. It takes strong evidence—evidence rarer than α allows—to reject it. You control how high the bar is by choosing α. You choose based on the consequences of false rejection. A test of whether a parachute works should demand very strong evidence before approval. An experiment exploring whether a new marketing approach might increase clicks can accept weaker evidence because the stakes are lower.
+Suppose a bank believes that 50% of first-time borrowers take out smaller loans than repeat borrowers. They sample 100 first-time borrowers and find 53 took out smaller loans. Is 53% different enough from 50% to reject the claim?
 
-The method is powerful because it's rigorous. But it's also been distorted by misunderstanding p-values and by the pressure to publish surprising findings. As you apply this method—in science, in policy, in business—remember what it can and cannot do. It can tell you whether data are consistent with a hypothesis. It cannot prove the hypothesis is true. It cannot tell you whether an effect matters, only whether it's rare under the null. And it assumes that you tested the hypothesis you stated, not that you tested everything and reported what worked.
+The test statistic for a proportion is:
 
-The example of the FDA committee matters not because they apply formulas, but because they understand the logic. They demand strong evidence before approving a drug because the alternative—approving something that doesn't work—can harm people who might have tried something effective instead. The statistical test is the machinery. Understanding what it means, and what it doesn't mean, is the skill.
+$$Z = \frac{p' - p_0}{\sqrt{p_0 q_0 / n}}$$
+
+where $p'$ is the sample proportion, $p_0$ is the hypothesized proportion, and $q_0 = 1 - p_0$. This works when $np'$ and $nq'$ are both at least 5 — the sample is large enough that the normal approximation to the binomial is reasonable.
+
+For the bank example:
+
+$H_0: p = 0.50$, $H_a: p \neq 0.50$ (two-tailed, since we're asking whether the proportion differs in either direction).
+
+$$Z = \frac{0.53 - 0.50}{\sqrt{(0.50)(0.50)/100}} = \frac{0.03}{0.05} = 0.60$$
+
+The p-value for a two-tailed test is the area in both tails beyond $|Z| = 0.60$: approximately $2 \times 0.274 = 0.548$.
+
+Since $0.548 > 0.05$, fail to reject $H_0$. The data are consistent with the bank's claim that 50% of first-time borrowers take out smaller loans. A difference of 3 percentage points in a sample of 100 is well within what random sampling can produce.
+
+<!-- → [IMAGE: Standard normal curve for the bank's two-tailed proportion test. Both tails beyond ±1.96 shaded as rejection regions. The calculated test statistic Z = 0.60 marked near the center, clearly outside the rejection regions. The p-value labeled as the combined area in both tails (0.548). Caption: "Z = 0.60 barely moves from center. With a p-value of 0.548, the data offer no reason to doubt the null."] -->
+
+---
+
+## When the machinery gets misused
+
+Hypothesis testing is genuinely powerful. It is also among the most misused tools in science, and you will encounter the misuse constantly if you read research.
+
+The specific problem is called **p-hacking**, and it works like this.
+
+Imagine you conduct 20 hypothesis tests, each on a null hypothesis that is actually true. By definition, $\alpha = 0.05$ means you expect to reject a true null 5% of the time just by chance. In 20 tests, that means you expect roughly one false rejection — one "statistically significant" result that doesn't reflect any real effect.
+
+If you publish all 20 tests, this is fine. Readers see the false positive in context. But if you publish only the one "significant" result and quietly file away the other 19, readers see what looks like strong evidence of an effect that doesn't exist.
+
+This is p-hacking. It happens not just through deliberate concealment but through a hundred small decisions: which outcome variables to examine, which subgroups to analyze, whether to include or exclude outliers, when to stop collecting data. Each decision is a fork in the analysis, and the researcher can (consciously or not) follow the forks that produce smaller p-values.
+
+The result is the **replication crisis**: a set of high-profile findings in psychology, medicine, and other fields that turned out not to replicate when independent labs tried to reproduce them. The original studies had p < 0.05. The replications did not. The most likely explanation is p-hacking, combined with the publication bias that favors significant results.
+
+How to protect against it:
+
+Pre-register your analysis. Before collecting data, write down exactly what hypothesis you will test, what test statistic you will use, and what significance level you will apply. A p-value from a pre-registered test accurately describes the probability of that data under the null. A p-value from an analysis that tried many things means less.
+
+Report actual p-values, not just whether you rejected or failed to reject. A p-value of 0.049 and a p-value of 0.0003 are both "significant" at $\alpha = 0.05$, but they tell very different stories about how far the data are from the null.
+
+Ask about effect size. A drug that reduces pain by 0.2 points on a 100-point scale might have p < 0.05 with a large enough sample. Statistical significance and practical significance are not the same thing. The p-value measures rarity; the effect size measures magnitude. Both matter.
+
+Demand replication. One study with p < 0.05 is interesting. The same result from three independent labs is convincing.
+
+<!-- → [CHART: Line chart — x-axis: number of independent tests conducted (1 to 50), y-axis: probability of at least one false positive (Type I error). Curve starts at 0.05 for one test and rises toward 1.0 as tests increase, reaching ~0.92 by 50 tests (family-wise error rate = 1 − 0.95^n). A horizontal dashed line at 0.05. Caption: "Running 20 tests at α = 0.05 gives roughly a 64% chance of at least one false positive — even when no real effects exist. This is the arithmetic of p-hacking."] -->
+
+---
+
+## What the FDA committee understood
+
+Return to the advisory committee in 2004. They are not running a hypothesis test mechanically. They understand the logic behind it.
+
+They understand that $\alpha = 0.05$ is a policy choice, not a natural law. Setting it at 0.05 means: we will accept a 5% chance of approving a drug that doesn't work. That's the Type I error rate the regulatory system has chosen to tolerate. Different standards might demand 0.01 — a stricter threshold, fewer false approvals, but also longer wait times for drugs that really work.
+
+They understand that a p-value less than 0.05 doesn't tell them how large the effect is. A drug might be statistically significant but clinically useless. They need to see the effect size too: how much did patients actually improve, not just whether the improvement was unlikely under a null of zero effect.
+
+And they understand that the burden of proof is asymmetric deliberately. The status quo — no approval — protects patients from ineffective or harmful drugs. Overturning that status quo requires meeting a high standard of evidence. This is not skepticism about science; it is a rational policy about what errors are acceptable.
+
+The entire framework of hypothesis testing is designed to implement that rationality. It does not tell you whether a drug works. It tells you whether the evidence is strong enough, by a specified standard, to reject the claim that it doesn't. That conditional structure — testing against a null, not proving a hypothesis — is not a limitation. It's the whole point.
+
+You can now set up that test, compute the statistic, interpret the p-value correctly, understand what errors you might be making and why, and recognize when someone else is using the machinery dishonestly. That is a lot to have added to your toolkit in one chapter. The next chapter extends it: two populations instead of one, and the same five steps.
 
 ---
 
@@ -398,79 +247,31 @@ The example of the FDA committee matters not because they apply formulas, but be
 
 ### Warm-up
 
-**Exercise 9.1** *(LO: state hypotheses correctly.)* For each scenario, write the null and alternative hypotheses. State whether it's a one-tailed or two-tailed test.
+**9.1** *(Stating hypotheses.)* For each scenario, write $H_0$ and $H_a$, and state whether the test is one-tailed or two-tailed. (a) A battery manufacturer claims its product lasts at least 40 hours. A consumer testing lab wants to verify the claim. (b) A university researcher tests whether students at their college sleep a different number of hours per night than the national average of 7 hours. (c) A quality control engineer tests whether a machine filling cereal boxes is dispensing exactly 18 oz on average.
 
-(a) A company claims its new battery lasts longer than 40 hours. You want to test this claim.
+**9.2** *(Type I and Type II errors in context.)* For scenario 9.1(c): (a) Describe a Type I error in plain language. What happens as a result? (b) Describe a Type II error. What happens? (c) Which error is more costly for the cereal company? Explain your reasoning.
 
-(b) A researcher tests whether the mean height of students in a college differs from the national average of 67 inches.
-
-(c) A manufacturer tests whether the proportion of defective items is at most 2%.
-
-**Exercise 9.2** *(LO: distinguish Type I and Type II errors.)* For the battery scenario in 9.1(a), describe a Type I error and a Type II error in context. Which is worse, and why?
-
-**Exercise 9.3** *(LO: compute a z-statistic.)* A sample of 64 students has a mean test score of 72 with a standard deviation of 8. The population standard deviation is known to be 8. Test whether the mean score differs from 70 at the 5% significance level. Compute the z-statistic.
+**9.3** *(Computing a z-statistic.)* A sample of 49 students has a mean exam score of 74. The population standard deviation is known to be 7. Test whether the mean differs from 70 at the 5% significance level. Compute the z-statistic and determine whether to reject $H_0$.
 
 ### Application
 
-**Exercise 9.4** *(LO: conduct a t-test for a mean.)* A coffee shop claims its employees' mean time to prepare a cappuccino is 3.5 minutes. A quality auditor samples 16 cappuccinos and finds a mean preparation time of 3.8 minutes with a standard deviation of 0.6 minutes. At the 5% significance level, test whether the mean time exceeds 3.5 minutes. State your conclusion.
+**9.4** *(Full five-step t-test.)* A coffee shop claims its employees prepare cappuccinos in a mean of 3.5 minutes. An auditor samples 16 cappuccinos and finds a mean of 3.8 minutes with standard deviation 0.6 minutes. At $\alpha = 0.05$, test whether preparation time exceeds 3.5 minutes. Write out all five steps.
 
-**Exercise 9.5** *(LO: conduct a test for a proportion.)* A political poll claims 45% of voters support a ballot measure. A journalist surveys 200 voters and finds 98 support it. Test whether the true proportion differs from 45% at the 5% significance level. State the null and alternative hypotheses, calculate the z-statistic, and state your conclusion.
+**9.5** *(Proportion test.)* A school district believes 60% of its students walk or bike to school. In a survey of 200 students, 108 report walking or biking. At $\alpha = 0.05$, test whether the true proportion differs from 60%. Show the test statistic calculation and state your conclusion.
 
-**Exercise 9.6** *(LO: interpret p-values correctly.)* A researcher reports a p-value of 0.032 for a two-tailed test with α = 0.05. What does this p-value tell you? Should you reject the null? Explain what the p-value does and does not mean.
+**9.6** *(Interpreting a p-value.)* A researcher reports: "We found a statistically significant effect (p = 0.031, α = 0.05)." (a) What does the p-value of 0.031 mean, precisely? (b) Does it tell you the probability the null hypothesis is true? Why or why not? (c) Does it tell you whether the effect is practically important?
 
 ### Synthesis
 
-**Exercise 9.7** *(LO: apply the five-step procedure.)* Lake Tahoe Community College (LTCC) tracks student sleep hours. A study claims LTCC students sleep less than 7 hours per night on average. A sample of 22 students yields a mean of 7.24 hours with a standard deviation of 1.93 hours. At the 5% significance level, does the data support the claim that students sleep less than 7 hours? Conduct the full five-step test.
+**9.7** *(Choosing α deliberately.)* A hospital is evaluating a new rapid test for a serious infection. The test will be used to decide whether to isolate patients immediately. (a) What is the Type I error in this context? What does it cost? (b) What is the Type II error? What does it cost? (c) Would you set $\alpha = 0.01$ or $\alpha = 0.10$ for this test? Justify your choice in terms of the error trade-off.
 
-**Exercise 9.8** *(LO: recognize p-hacking and replication issues.)* A marketing team runs hypothesis tests on 10 different advertising approaches, each at the 5% significance level. One approach shows p = 0.047. They declare it the winner and launch the campaign. What's wrong with this logic? How could they improve it?
+**9.8** *(Full five-step t-test — student sleep data.)* A researcher claims that college students sleep fewer than 7 hours per night on average. A sample of 22 students yields a mean of 6.4 hours and a standard deviation of 1.8 hours. At $\alpha = 0.05$, conduct the full five-step hypothesis test. Does the evidence support the researcher's claim?
 
 ### Challenge
 
-**Exercise 9.9** *(LO: connect to real stakes and trade-offs.)* A new screening test for a disease is proposed. The manufacturer claims it correctly identifies the disease 95% of the time. In practice, you're testing whether the sensitivity (proportion of true positives) is at least 0.95. If you set α = 0.01, you make false rejection rare. But what happens to the Type II error risk? Why might a doctor prefer to increase α (say, to 0.10) for this test?
+**9.9** *(p-hacking and multiple comparisons.)* A marketing team runs 15 independent A/B tests simultaneously, each at $\alpha = 0.05$, all on campaigns that have no real effect. (a) What is the probability that at least one test produces a "significant" result by chance alone? (Use $P(\text{at least one false positive}) = 1 - 0.95^{15}$.) (b) The team reports the one "winning" campaign. What is wrong with this? (c) Suggest two changes to their process that would make the result more trustworthy.
 
-**Exercise 9.10** *(LO: critical thinking on statistical claims.)* You read a news article: "Study shows dark chocolate improves heart health: p < 0.05." What would you want to know before changing your diet? What does the p-value not tell you about the effect size, the sample, or the real-world importance of the finding?
-
----
-
-## Chapter summary
-
-You can now do three things you couldn't do before reading this chapter.
-
-You can **set up a hypothesis test** by identifying the null and alternative hypotheses, distinguishing one-tailed from two-tailed tests, and understanding the asymmetry of the framework: the status quo has the advantage, and the burden of proof lies with anyone seeking to overthrow it.
-
-You can **conduct a hypothesis test** by choosing the appropriate test statistic (z or t), computing it from your sample data, comparing it to a critical value or computing a p-value, and reaching a conclusion with clear language about what you found and what action follows.
-
-You can **interpret a p-value correctly** and recognize when it's being misused. You understand that the p-value is the probability of data this extreme if the null is true, not the probability that the null is true given the data. You recognize that statistical significance and practical significance are different. You know that p-hacking—running many tests and reporting only the significant ones—inflates false findings.
-
-Most importantly, you understand that hypothesis testing is not magic. It's a disciplined way of asking "Is the evidence strong enough to change my mind?" The discipline protects against wishful thinking and random chance. But the method assumes honesty: that you test what you claim to test, not that you test everything and report what worked.
-
-What you should now be able to teach a friend: why the null hypothesis always gets the benefit of the doubt; what a p-value actually measures; why you can't drive both Type I and Type II error rates to zero; and how to spot when hypothesis tests are being misused to create false certainty.
-
----
-
-## Connections forward
-
-In this chapter, you tested claims about a single population parameter (mean or proportion). In Chapter 10, you'll test whether two populations differ. The logic is identical; the machinery extends. In Chapter 11, you'll test whether categories are independent (chi-square). In Chapter 12, you'll test whether more than two groups differ in their means (ANOVA). All follow the same five-step structure.
-
-But the more immediate connection is to the replication crisis and the careful use of p-values. As you encounter claims throughout your career—in medicine, policy, science, business—you'll ask: was this tested once or repeatedly? Was the test pre-registered or discovered after the fact? How large is the effect, not just how unlikely? Is it reproducible? These are the questions that distinguish real findings from statistical artifacts.
-
-The FDA committee that votes on a new drug uses this logic. A researcher designing an experiment uses it. A manufacturer tracking machine calibration uses it. You now speak their language and can judge the strength of their evidence.
-
----
-
-## What would change my mind
-
-A study showing that p-values calculated post-hoc (after data collection), without pre-registration, are systematically inflated would challenge the emphasis I've placed on pre-registration. Evidence that null hypotheses are true more often in practice than the literature suggests would deepen concern about Type I error. Conversely, a demonstration that pre-registration eliminates the replication crisis would strongly support the recommendations in the "Integration" section.
-
-## Still puzzling
-
-I don't fully understand why the p-hacking problem persists even in fields where it has been thoroughly documented. There are plausible explanations (publish-or-perish pressure, confirmation bias, misunderstanding of p-values), but I haven't found a study that measures which factors matter most or how to effectively counter them without relying solely on better statistical literacy.
-
----
-
-## Tags
-
-hypothesis testing, null hypothesis, p-values, Type I error, Type II error, test statistic, z-test, t-test, proportion test, statistical significance, replication crisis, p-hacking, one-sample inference
+**9.10** *(Statistical vs. practical significance.)* A pharmaceutical company tests a new pain medication on 10,000 patients. The drug reduces pain scores by an average of 0.3 points on a 100-point scale. The p-value is 0.0001. (a) Is the result statistically significant at $\alpha = 0.05$? (b) Is a 0.3-point improvement on a 100-point scale clinically meaningful? (c) What does this example reveal about the relationship between sample size, p-values, and practical importance? What additional information would you want before recommending this drug?
 
 ---
 
@@ -559,12 +360,11 @@ about "significance" as a discipline?
 
 **Preview of next chapter:** Chapter 10 covers two-sample tests. You'll compare two groups in your dataset.
 
-
 ---
 
 ## 🕰️ AI Wayback Machine
 
-**William Gosset** was wrote as "Student" while working at Guinness — and introduced the t-test in 1908 to handle small-sample inference.
+**William Gosset** wrote as "Student" while working at Guinness — and introduced the t-test in 1908 to handle small-sample inference.
 
 **Run this:**
 
